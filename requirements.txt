@@ -1,0 +1,9 @@
+django
+environs
+djangorestframework
+firebase-admin
+whitenoise
+drf-yasg
+psycopg2-binary
+supabase
+django-filter
