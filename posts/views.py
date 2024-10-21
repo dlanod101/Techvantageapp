@@ -3,6 +3,9 @@ from .models import Post
 from .serializers import PostSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
+from rest_framework.views import APIView
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 
 # Create your views here.
 class PostCreate(generics.CreateAPIView):
@@ -30,6 +33,32 @@ class PostRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = PostSerializer
     lookup_field = 'pk'
 
+class PostFind(APIView):
+    """
+    `Authentication` is required
+    - `GET /posts/` : Retrieve all posts
+    """
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                'content',
+                openapi.IN_QUERY,
+                description="Returns a Post with specific content but returns all posts if no post matches said content",
+                type=openapi.TYPE_STRING,
+            ),
+        ],
+    )
+    def get(self, request):
+        content = request.query_params.get("content", "")
+
+        if content:
+            post = Post.objects.filter(content__icontains=content)
+
+        else:
+            post = Post.objects.all()
+
+        serializer = PostSerializer(post, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 from rest_framework.views import APIView
@@ -52,7 +81,7 @@ class PostWithFileUploadView(APIView):
     def post(self, request):
         # Get the post content from request data
         content = request.data.get('content')
-        
+
         if not content:
             return Response({"error": "Post content is required."}, status=status.HTTP_400_BAD_REQUEST)
 
