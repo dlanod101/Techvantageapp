@@ -8,3 +8,4 @@ psycopg2-binary
 supabase
 django-filter
 django-cors-headers
+python-dotenv
