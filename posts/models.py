@@ -18,4 +18,4 @@ class UploadedFile(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.file_name} uploaded by {self.user}"
+        return f"{self.file_url}"
