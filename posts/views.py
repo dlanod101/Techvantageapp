@@ -152,7 +152,7 @@ class PostWithFileUploadView(APIView):
             
     def get(self, request):
         """
-        Retrieve posts and their uploaded files for the authenticated user.
+        -`GET` Retrieve posts and their uploaded files for the authenticated user.
         """
         try:
             # Get all posts by the authenticated user
