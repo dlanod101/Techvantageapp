@@ -1,0 +1,16 @@
+USERPROFILE
+Make profile models
+-Name - From user
+-About
+-Experience ✔️
+-Skills
+-Interest
+
+JOB
+Make job models
+-Title
+-User
+-Image
+-Description
+-Location
+-Date_Published
