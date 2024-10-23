@@ -12,10 +12,10 @@ class PostCreate(generics.CreateAPIView):
     """
     `Authentication` is required
     Project CRUD operations.
-    - `GET /posts/` : Retrieve all posts
-    - `POST /posts/` : Create a new post
-    - `PUT /posts/{id}/` : Update a post
-    - `DELETE /posts/{id}/` : Delete a post
+    - `GET /post/` : Retrieve all post
+    - `POST /post/` : Create a new post
+    - `PUT /post/{id}/` : Update a post
+    - `DELETE /post/{id}/` : Delete a post
     """
     queryset = Post.objects.all()
     serializer_class = PostSerializer
@@ -36,7 +36,7 @@ class PostRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 class PostFind(APIView):
     """
     `Authentication` is required
-    - `GET /posts/` : Retrieve all posts
+    - `GET /post/` : Retrieve all posts
     """
     @swagger_auto_schema(
         manual_parameters=[
