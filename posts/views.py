@@ -83,6 +83,7 @@ class PostWithFileUploadView(APIView):
     def post(self, request):
         # Get the post content from request data
         content = request.data.get('content')
+        color_code = request.data.get('color_code')
         date_published = request.data.get('date_published')
 
         if not content:
@@ -106,6 +107,7 @@ class PostWithFileUploadView(APIView):
                 post = Post.objects.create(
                     user=request.user,
                     content=content,
+                    color_code=color_code,
                     date_published=date_published  # Set post content
                 )
 
@@ -122,6 +124,7 @@ class PostWithFileUploadView(APIView):
                     "post": {
                         "id": post.id,
                         "content": post.content,
+                        "color_code": post.color_code,
                         "file_url": uploaded_file.file_url,
                         "date_published": post.date_published
                     }
@@ -135,6 +138,7 @@ class PostWithFileUploadView(APIView):
                 post = Post.objects.create(
                         user=request.user,
                         content=content,
+                        color_code=color_code,
                         date_published=date_published
                   )  # Set post content
 
@@ -143,6 +147,7 @@ class PostWithFileUploadView(APIView):
                         "post": {
                             "id": post.id,
                             "content": post.content,
+                            "color_code": post.color_code,
                             "file_url": None,
                             "date_published": post.date_published
                         }
@@ -173,6 +178,7 @@ class PostWithFileUploadView(APIView):
                 posts_data.append({
                     "id": post.id,
                     "content": post.content,
+                    "color_code": post.color_code,
                     "file_url": file_url,
                     "date_published": post.date_published
                 })
@@ -184,7 +190,42 @@ class PostWithFileUploadView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
+
+class PostWithFileUploadViewSingleFile(APIView):
+    """
+    -`GET` Retrieve posts and their uploaded files for the authenticated user.
+    """
+    def get(self, request, post_id):
+        try:
+            try:
+                post = Post.objects.get(id=post_id, user=request.user)
+            except Post.DoesNotExist:
+                return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+
+            # Prepare data for response
+            posts_data = []
+            
+        # Get associated uploaded file for each post
+            uploaded_file = UploadedFile.objects.filter(post=post).first()
+            file_url = uploaded_file.file_url if uploaded_file else None
+                    
+            posts_data.append({
+                "id": post.id,
+                "content": post.content,
+                "color_code": post.color_code,
+                "file_url": file_url,
+                "date_published": post.date_published
+            }) 
+
+            return Response({
+                "message": "Posts retrieved successfully.",
+                "posts": posts_data
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+    
     # PUT (Full update)
     def put(self, request, post_id):
         try:
@@ -193,8 +234,10 @@ class PostWithFileUploadView(APIView):
             return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
 
         content = request.data.get('content')
+        color_code = request.data.get('color_code')
         date_published = request.data.get('date_published', timezone.now())
         file = request.FILES.get('file')
+        
 
         if not content:
             return Response({"error": "Post content is required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -205,6 +248,7 @@ class PostWithFileUploadView(APIView):
 
                 # Update post and uploaded file
                 post.content = content
+                post.color_code = color_code
                 post.date_published = date_published
                 post.save()
 
@@ -219,6 +263,7 @@ class PostWithFileUploadView(APIView):
                     "post": {
                         "id": post.id,
                         "content": post.content,
+                        "color_code": post.color_code,
                         "file_url": uploaded_file.file_url,
                         "date_published": post.date_published
                     }
@@ -229,6 +274,7 @@ class PostWithFileUploadView(APIView):
 
         else:
             post.content = content
+            post.color_code = color_code
             post.date_published = date_published
             post.save()
 
@@ -237,6 +283,7 @@ class PostWithFileUploadView(APIView):
                 "post": {
                     "id": post.id,
                     "content": post.content,
+                    "color_code": post.color_code,
                     "file_url": None,
                     "date_published": post.date_published
                 }
@@ -250,6 +297,7 @@ class PostWithFileUploadView(APIView):
             return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
 
         content = request.data.get('content', post.content)
+        color_code = request.data.get("color_code")
         date_published = request.data.get('date_published', post.date_published)
         file = request.FILES.get('file')
 
@@ -257,6 +305,7 @@ class PostWithFileUploadView(APIView):
             try:
                 file_url = upload_app_file(file, 'posts')
                 post.content = content
+                post.color_code = color_code
                 post.date_published = date_published
                 post.save()
 
@@ -271,6 +320,7 @@ class PostWithFileUploadView(APIView):
                     "post": {
                         "id": post.id,
                         "content": post.content,
+                        "color_code": post.color_code,
                         "file_url": uploaded_file.file_url,
                         "date_published": post.date_published
                     }
@@ -281,6 +331,7 @@ class PostWithFileUploadView(APIView):
 
         else:
             post.content = content
+            post.color_code = color_code
             post.date_published = date_published
             post.save()
 
@@ -289,6 +340,7 @@ class PostWithFileUploadView(APIView):
                 "post": {
                     "id": post.id,
                     "content": post.content,
+                    "color_code": post.color_code,
                     "file_url": None,
                     "date_published": post.date_published
                 }
