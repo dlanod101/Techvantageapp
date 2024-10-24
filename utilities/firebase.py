@@ -4,7 +4,7 @@ from django.conf import settings
 from rest_framework import exceptions
 from dotenv import load_dotenv
 import os 
-
+from urllib.parse import urlparse
 load_dotenv()
 
 credential_info = os.getenv("CREDENTIALS")
@@ -114,3 +114,36 @@ def upload_app_file(file, app_name):
     """Upload file to Firebase storage under the specific app's folder."""
     path = f'{app_name}/uploads/{file.name}'
     return upload_file_to_firebase(file, path)
+
+
+def delete_file_from_firebase(file_url):
+    """
+    Deletes a file from Firebase Storage using its public URL.
+
+    Args:
+    - file_url (str): The public URL of the file in Firebase Storage.
+    
+    Returns:
+    - None: If the file is successfully deleted.
+    
+    Raises:
+    - Exception: If an error occurs during deletion.
+    """
+    try:
+        # Parse the file path from the URL
+        parsed_url = urlparse(file_url)
+        file_path = parsed_url.path.lstrip('/')  # Remove the leading '/'
+        
+        # Get the Firebase Storage bucket
+        bucket = storage.bucket()
+
+        # Create a reference to the file
+        blob = bucket.blob(file_path)
+
+        # Delete the file
+        blob.delete()
+
+        print(f"File {file_path} successfully deleted from Firebase Storage.")
+
+    except Exception as e:
+        raise Exception(f"Error deleting file from Firebase Storage: {str(e)}")

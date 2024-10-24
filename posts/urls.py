@@ -6,5 +6,6 @@ urlpatterns = [
     path('post/<int:pk>', views.PostRetrieveUpdateDestroy.as_view(), name='post-update'),
     path('postfind/', views.PostFind.as_view(), name='post-find'),
     path('post_file_upload/', views.PostWithFileUploadView.as_view(), name='post-file-upload'),
+    path('post_file_upload/<int:post_id>', views.PostWithFileUploadView.as_view(), name='post-details'),
     #path('post_file_retrieve/<int:file_id>', views.RetrieveFileView.as_view(), name='post-file-retrieve'),
 ]

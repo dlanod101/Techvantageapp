@@ -6,6 +6,7 @@ from rest_framework import generics, status
 from rest_framework.views import APIView
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
+from django.utils import timezone
 
 # Create your views here.
 class PostCreate(generics.CreateAPIView):
@@ -70,7 +71,7 @@ import mimetypes
 import firebase_admin
 from firebase_admin import storage
 from rest_framework.permissions import IsAuthenticated
-from utilities.firebase import upload_app_file  # Your utility function for Firebase upload
+from utilities.firebase import upload_app_file, delete_file_from_firebase # Your utility function for Firebase upload
 
 class PostWithFileUploadView(APIView):
     """
@@ -180,6 +181,140 @@ class PostWithFileUploadView(APIView):
                 "message": "Posts retrieved successfully.",
                 "posts": posts_data
             }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    # PUT (Full update)
+    def put(self, request, post_id):
+        try:
+            post = Post.objects.get(id=post_id, user=request.user)
+        except Post.DoesNotExist:
+            return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        content = request.data.get('content')
+        date_published = request.data.get('date_published', timezone.now())
+        file = request.FILES.get('file')
+
+        if not content:
+            return Response({"error": "Post content is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if file:
+            try:
+                file_url = upload_app_file(file, 'posts')
+
+                # Update post and uploaded file
+                post.content = content
+                post.date_published = date_published
+                post.save()
+
+                uploaded_file, _ = UploadedFile.objects.update_or_create(post=post, defaults={
+                    "file_name": file.name,
+                    "file_url": file_url,
+                    "user": request.user
+                })
+
+                return Response({
+                    "message": "Post updated successfully.",
+                    "post": {
+                        "id": post.id,
+                        "content": post.content,
+                        "file_url": uploaded_file.file_url,
+                        "date_published": post.date_published
+                    }
+                }, status=status.HTTP_200_OK)
+
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        else:
+            post.content = content
+            post.date_published = date_published
+            post.save()
+
+            return Response({
+                "message": "Post updated successfully.",
+                "post": {
+                    "id": post.id,
+                    "content": post.content,
+                    "file_url": None,
+                    "date_published": post.date_published
+                }
+            }, status=status.HTTP_200_OK)
+
+    # PATCH (Partial update)
+    def patch(self, request, post_id):
+        try:
+            post = Post.objects.get(id=post_id, user=request.user)
+        except Post.DoesNotExist:
+            return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        content = request.data.get('content', post.content)
+        date_published = request.data.get('date_published', post.date_published)
+        file = request.FILES.get('file')
+
+        if file:
+            try:
+                file_url = upload_app_file(file, 'posts')
+                post.content = content
+                post.date_published = date_published
+                post.save()
+
+                uploaded_file, _ = UploadedFile.objects.update_or_create(post=post, defaults={
+                    "file_name": file.name,
+                    "file_url": file_url,
+                    "user": request.user
+                })
+
+                return Response({
+                    "message": "Post partially updated.",
+                    "post": {
+                        "id": post.id,
+                        "content": post.content,
+                        "file_url": uploaded_file.file_url,
+                        "date_published": post.date_published
+                    }
+                }, status=status.HTTP_200_OK)
+
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        else:
+            post.content = content
+            post.date_published = date_published
+            post.save()
+
+            return Response({
+                "message": "Post partially updated.",
+                "post": {
+                    "id": post.id,
+                    "content": post.content,
+                    "file_url": None,
+                    "date_published": post.date_published
+                }
+            }, status=status.HTTP_200_OK)
+
+    # DELETE (Delete post and associated file)
+    def delete(self, request, post_id):
+        try:
+            post = Post.objects.get(id=post_id, user=request.user)
+            uploaded_file = UploadedFile.objects.filter(post=post).first()
+
+            # Delete the file from Firebase storage if it exists
+            if uploaded_file:
+                try:
+                    # Assuming you have a function to delete files from Firebase
+                    delete_file_from_firebase("posts/uploads/" + uploaded_file.file_name)
+                    uploaded_file.delete()
+                except Exception as e:
+                    return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+            post.delete()
+
+            return Response({"message": "Post and associated file deleted successfully."}, status=status.HTTP_200_OK)
+
+        except Post.DoesNotExist:
+            return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

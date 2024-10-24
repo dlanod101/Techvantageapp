@@ -6,11 +6,20 @@ Make profile models
 -Skills
 -Interest
 
+
 JOB
-Make job models
+Make job models ✔️
 -Title
 -User
 -Image
 -Description
 -Location
 -Date_Published
+
+Serialize the data ✔️
+
+Make the Create views ✔️
+
+Make the Retrieve, Update, Delete views
+
+Make the url.py file and make them
