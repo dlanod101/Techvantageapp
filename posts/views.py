@@ -123,6 +123,7 @@ class PostWithFileUploadView(APIView):
                     "message": "Post and file uploaded successfully.",
                     "post": {
                         "id": post.id,
+                        "username": request.user.display_name,
                         "content": post.content,
                         "color_code": post.color_code,
                         "file_url": uploaded_file.file_url,
@@ -146,6 +147,7 @@ class PostWithFileUploadView(APIView):
                         "message": "Post and file uploaded successfully.",
                         "post": {
                             "id": post.id,
+                            "username": request.user.display_name,
                             "content": post.content,
                             "color_code": post.color_code,
                             "file_url": None,
@@ -177,6 +179,7 @@ class PostWithFileUploadView(APIView):
                 
                 posts_data.append({
                     "id": post.id,
+                    "username": request.user.display_name,
                     "content": post.content,
                     "color_code": post.color_code,
                     "file_url": file_url,
@@ -211,6 +214,7 @@ class PostWithFileUploadViewSingleFile(APIView):
                     
             posts_data.append({
                 "id": post.id,
+                "username": request.user.display_name,
                 "content": post.content,
                 "color_code": post.color_code,
                 "file_url": file_url,
@@ -262,6 +266,7 @@ class PostWithFileUploadViewSingleFile(APIView):
                     "message": "Post updated successfully.",
                     "post": {
                         "id": post.id,
+                        "username": request.user.display_name,
                         "content": post.content,
                         "color_code": post.color_code,
                         "file_url": uploaded_file.file_url,
@@ -282,6 +287,7 @@ class PostWithFileUploadViewSingleFile(APIView):
                 "message": "Post updated successfully.",
                 "post": {
                     "id": post.id,
+                    "username": request.user.display_name,
                     "content": post.content,
                     "color_code": post.color_code,
                     "file_url": None,
@@ -319,6 +325,7 @@ class PostWithFileUploadViewSingleFile(APIView):
                     "message": "Post partially updated.",
                     "post": {
                         "id": post.id,
+                        "username": request.user.display_name,
                         "content": post.content,
                         "color_code": post.color_code,
                         "file_url": uploaded_file.file_url,
@@ -339,6 +346,7 @@ class PostWithFileUploadViewSingleFile(APIView):
                 "message": "Post partially updated.",
                 "post": {
                     "id": post.id,
+                    "username": request.user.display_name,
                     "content": post.content,
                     "color_code": post.color_code,
                     "file_url": None,
