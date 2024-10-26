@@ -123,7 +123,7 @@ class PostWithFileUploadView(APIView):
                     "message": "Post and file uploaded successfully.",
                     "post": {
                         "id": post.id,
-                        "username": request.user.display_name,
+                        "username": post.user.display_name,
                         "content": post.content,
                         "color_code": post.color_code,
                         "file_url": uploaded_file.file_url,
@@ -147,7 +147,7 @@ class PostWithFileUploadView(APIView):
                         "message": "Post and file uploaded successfully.",
                         "post": {
                             "id": post.id,
-                            "username": request.user.display_name,
+                            "username": post.user.display_name,
                             "content": post.content,
                             "color_code": post.color_code,
                             "file_url": None,
@@ -163,8 +163,8 @@ class PostWithFileUploadView(APIView):
         -`GET` Retrieve posts and their uploaded files for the authenticated user.
         """
         try:
-            # Get all posts by the authenticated user
-            posts = Post.objects.filter(user=request.user)
+            # Get all posts 
+            posts = Post.objects.all()
 
             # If no posts are found, return a response
             if not posts.exists():
@@ -179,7 +179,7 @@ class PostWithFileUploadView(APIView):
                 
                 posts_data.append({
                     "id": post.id,
-                    "username": request.user.display_name,
+                    "username": post.user.display_name,
                     "content": post.content,
                     "color_code": post.color_code,
                     "file_url": file_url,
