@@ -1,75 +1,11 @@
-from django.shortcuts import render
-from .models import Post
-from .serializers import PostSerializer
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import generics, status
-from rest_framework.views import APIView
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
 from django.utils import timezone
-
-# Create your views here.
-class PostCreate(generics.CreateAPIView):
-    """
-    `Authentication` is required
-    Project CRUD operations.
-    - `GET /post/` : Retrieve all post
-    - `POST /post/` : Create a new post
-    - `PUT /post/{id}/` : Update a post
-    - `DELETE /post/{id}/` : Delete a post
-    """
-    queryset = Post.objects.all()
-    serializer_class = PostSerializer
-    permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
-
-    def perform_create(self, serializer):
-        # Automatically associate the current user with the post
-        serializer.save(user=self.request.user)
-
-class PostRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
-    """
-    `Authentication` is required
-    """
-    queryset = Post.objects.all()
-    serializer_class = PostSerializer
-    lookup_field = 'pk'
-
-class PostFind(APIView):
-    """
-    `Authentication` is required
-    - `GET /post/` : Retrieve all posts
-    """
-    @swagger_auto_schema(
-        manual_parameters=[
-            openapi.Parameter(
-                'content',
-                openapi.IN_QUERY,
-                description="Returns a Post with specific content but returns all posts if no post matches said content",
-                type=openapi.TYPE_STRING,
-            ),
-        ],
-    )
-    def get(self, request):
-        content = request.query_params.get("content", "")
-
-        if content:
-            post = Post.objects.filter(content__icontains=content)
-
-        else:
-            post = Post.objects.all()
-            
-
-        serializer = PostSerializer(post, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Post, UploadedFile  # Models for posts and uploaded files
+from .models import Post, UploadedFile, Comment  # Models for posts and uploaded files
+from .serializers import CommentSerializer
 import mimetypes
-import firebase_admin
-from firebase_admin import storage
+from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from utilities.firebase import upload_app_file, delete_file_from_firebase # Your utility function for Firebase upload
 
@@ -177,13 +113,23 @@ class PostWithFileUploadView(APIView):
                 uploaded_file = UploadedFile.objects.filter(post=post).first()
                 file_url = uploaded_file.file_url if uploaded_file else None
                 
+                # Get comments associated with the post
+                comments = post.post_comment.all()  # Use related_name to get comments
+                comments_data = [{
+                    "id": comment.id,
+                    "username": comment.user.display_name,  # Assuming user has display_name
+                    "content": comment.content,
+                    "date_published": comment.date_published
+                } for comment in comments]
+
                 posts_data.append({
                     "id": post.id,
                     "username": post.user.display_name,
                     "content": post.content,
                     "color_code": post.color_code,
                     "file_url": file_url,
-                    "date_published": post.date_published
+                    "date_published": post.date_published,
+                    "comments_data": comments_data
                 })
 
             return Response(posts_data, status=status.HTTP_200_OK)
@@ -208,14 +154,24 @@ class PostWithFileUploadViewSingleFile(APIView):
         # Get associated uploaded file for each post
             uploaded_file = UploadedFile.objects.filter(post=post).first()
             file_url = uploaded_file.file_url if uploaded_file else None
-                    
+
+            # Get comments associated with the post
+            comments = post.post_comment.all()
+            comments_data = [{
+                "id": comment.id,
+                "username": comment.user.display_name,  # Assuming user has display_name
+                "content": comment.content,
+                "date_published": comment.date_published
+            } for comment in comments]
+
             posts_data.append({
                 "id": post.id,
                 "username": request.user.display_name,
                 "content": post.content,
                 "color_code": post.color_code,
                 "file_url": file_url,
-                "date_published": post.date_published
+                "date_published": post.date_published,
+                "comments_data":comments_data
             }) 
 
             return Response({
@@ -375,3 +331,14 @@ class PostWithFileUploadViewSingleFile(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+from .serializers import CommentSerializer
+from django.shortcuts import get_object_or_404
+
+class AddCommentView(generics.CreateAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
+
+    def perform_create(self, serializer):
+        post = get_object_or_404(Post, id=self.kwargs['post_id'])  # Get the post instance
+        serializer.save(user=self.request.user, post=post)  # Save comment with user and post

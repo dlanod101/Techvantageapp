@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'users',
-    #'profilepage',
+    'profiles',
     'jobs',
     'drf_yasg',
     'posts',
