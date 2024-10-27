@@ -186,10 +186,7 @@ class PostWithFileUploadView(APIView):
                     "date_published": post.date_published
                 })
 
-            return Response({
-                "message": "Posts retrieved successfully.",
-                "posts": posts_data
-            }, status=status.HTTP_200_OK)
+            return Response(posts_data, status=status.HTTP_200_OK)
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
