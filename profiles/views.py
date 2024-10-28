@@ -2,13 +2,14 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from utilities.firebase import upload_app_file  # Firebase upload helper function
-from .models import UserProfile, Experience, Education, Location, ProfilePicture
+from .models import UserProfile, Experience, Education, Location, ProfilePicture, Friend
 from .serializers import (
     UserProfileSerializer,
     ExperienceSerializer,
     EducationSerializer,
     LocationSerializer,
-    ProfilePictureSerializer
+    ProfilePictureSerializer,
+    FriendSerializer
 )
 
 from django.db.models.signals import post_save
@@ -123,3 +124,27 @@ class GetProfiles(generics.ListAPIView):
 
     def get_queryset(self):
         return UserProfile.objects.all()
+
+class FriendListCreateView(generics.ListCreateAPIView):
+    serializer_class = FriendSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Filter friends where the authenticated user is the main user and is_friend is True
+        return Friend.objects.filter(user=self.request.user, is_friend=True)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            {"message": "Friend added successfully!", "friend": serializer.data},
+            status=status.HTTP_201_CREATED,
+            headers=headers
+        )
+
+    def perform_create(self, serializer):
+        # Set the current user as the 'user' for the new friend entry
+        serializer.save(user=self.request.user)

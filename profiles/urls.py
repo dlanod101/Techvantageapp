@@ -19,4 +19,6 @@ urlpatterns = [
 
     # Profile Picture
     path('profile/pictures/', views.ProfilePictureUpdateView.as_view(), name='profile-picture-list-create'),
+
+    path("friends/", views.FriendListCreateView.as_view(), name="friends_list_create"),
 ]
