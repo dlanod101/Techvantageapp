@@ -30,6 +30,7 @@ class ProfilePictureSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()  # Add a method to customize user data
     experiences = ExperienceSerializer(many=True, read_only=True)  # Nested serializer
     educations = EducationSerializer(many=True, read_only=True)
     locations = LocationSerializer(many=True, read_only=True)
@@ -42,3 +43,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'experiences', 'educations', 'locations', 'profile_pictures'
         ]
         read_only_fields = ['user', 'date_published']
+
+    def get_user(self, obj):
+        return obj.user.display_name  # Return the username, or you can return email, etc.
