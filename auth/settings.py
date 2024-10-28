@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'users',
     'profiles',
     'jobs',
+    #'friends',
     'drf_yasg',
     'posts',
     'corsheaders',

@@ -58,3 +58,11 @@ class ProfilePicture(models.Model):
 
     def __str__(self):
         return f"{self.file_url}"
+
+class Friend(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="friend")
+    profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="friends")
+    is_friend = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.user.display_name} is friends with {self.profile.user.display_name}" if self.is_friend else "Not friends"

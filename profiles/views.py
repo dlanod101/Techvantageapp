@@ -91,3 +91,10 @@ class UserProfileDetailView(generics.RetrieveUpdateAPIView):
         response = super().put(request, *args, **kwargs)
         response.data["message"] = "UserProfile updated successfully!"
         return response
+
+class GetProfiles(generics.ListAPIView):
+    serializer_class = UserProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return UserProfile.objects.all()
