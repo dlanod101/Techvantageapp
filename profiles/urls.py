@@ -18,5 +18,5 @@ urlpatterns = [
     path('profile/locations/', views.LocationListCreateView.as_view(), name='location-list-create'),
 
     # Profile Picture
-    path('profile/pictures/', views.ProfilePictureListCreateView.as_view(), name='profile-picture-list-create'),
+    path('profile/pictures/', views.ProfilePictureUpdateView.as_view(), name='profile-picture-list-create'),
 ]

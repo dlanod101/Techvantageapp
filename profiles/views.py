@@ -19,7 +19,19 @@ from .models import UserProfile
 @receiver(post_save, sender=CustomUser)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
-        UserProfile.objects.create(user=instance)
+        # Create the UserProfile instance for the new user
+        user_profile = UserProfile.objects.create(user=instance)
+        
+        # Set the default profile picture URL
+        default_file_url = "https://firebasestorage.googleapis.com/v0/b/newproject-7ad97.appspot.com/o/blue%20blank%20pfp%20icon%20%F0%9F%92%99.jpg?alt=media&token=f169e7d1-35b6-4ba5-bea4-ff09131936a4"  # Replace with your actual URL
+        
+        # Create a ProfilePicture instance with the default URL
+        ProfilePicture.objects.create(
+            user=instance,
+            profile=user_profile,
+            file_name="default-profile-picture.png",
+            file_url=default_file_url
+        )
 
 
 # Experience Views
@@ -62,21 +74,34 @@ class LocationListCreateView(generics.ListCreateAPIView):
 
 
 # ProfilePicture Views
-class ProfilePictureListCreateView(generics.ListCreateAPIView):
+class ProfilePictureUpdateView(generics.RetrieveUpdateAPIView):
     serializer_class = ProfilePictureSerializer
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        return ProfilePicture.objects.filter(user=self.request.user)
-
-    def perform_create(self, serializer):
+    def get_object(self):
+        # Retrieve or create a profile picture entry for the user if it doesn’t already exist
         user_profile = UserProfile.objects.get(user=self.request.user)
-        uploaded_file = self.request.FILES.get('file')  # Retrieve uploaded file from request
+        profile_picture, created = ProfilePicture.objects.get_or_create(
+            user=self.request.user, profile=user_profile
+        )
+        return profile_picture
+
+    def update(self, request, *args, **kwargs):
+        profile_picture = self.get_object()
+        uploaded_file = request.FILES.get('file')  # Get uploaded file from request
+
         if uploaded_file:
-            file_url = upload_app_file(uploaded_file, "User Profiles")  # Upload to Firebase and get URL
-            serializer.save(user=self.request.user, profile=user_profile, file_url=file_url)
+            file_url = upload_app_file(uploaded_file, "User Profiles")  # Upload to Firebase and get the URL
+            profile_picture.file_url = file_url  # Update file_url with the new one
+            profile_picture.save()
+            serializer = self.get_serializer(profile_picture)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         else:
-            raise ValueError("No file was uploaded.")
+            return Response(
+                {"error": "No file was uploaded."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
 
 
 # UserProfile Views
