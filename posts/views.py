@@ -2,8 +2,8 @@ from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Post, UploadedFile, Comment  # Models for posts and uploaded files
-from .serializers import CommentSerializer
+from .models import Post, UploadedFile, Comment, Likes  # Models for posts and uploaded files
+from .serializers import CommentSerializer, LikesSerializer
 import mimetypes
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -122,6 +122,13 @@ class PostWithFileUploadView(APIView):
                     "date_published": comment.date_published
                 } for comment in comments]
 
+                likes = post.post_likes.all()
+                likes_data = [{
+                    "id": likes.id,
+                    "username": likes.user.display_name,
+                    "likes":likes.likes
+                } for like in likes]
+                
                 posts_data.append({
                     "id": post.id,
                     "username": post.user.display_name,
@@ -129,7 +136,8 @@ class PostWithFileUploadView(APIView):
                     "color_code": post.color_code,
                     "file_url": file_url,
                     "date_published": post.date_published,
-                    "comments_data": comments_data
+                    "comments_data": comments_data,
+                    "likes_data": likes_data
                 })
 
             return Response(posts_data, status=status.HTTP_200_OK)
@@ -342,3 +350,25 @@ class AddCommentView(generics.CreateAPIView):
     def perform_create(self, serializer):
         post = get_object_or_404(Post, id=self.kwargs['post_id'])  # Get the post instance
         serializer.save(user=self.request.user, post=post)  # Save comment with user and post
+
+class AddLikeView(generics.CreateAPIView):
+    serializer_class = LikesSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        post = get_object_or_404(Post, pk=self.kwargs["post_id"])
+        
+        # Check if the user has already liked the post
+        like, created = Likes.objects.get_or_create(user=self.request.user, post=post)
+
+        if created:
+            # If the like object was created, set likes to 1
+            like.likes = 1
+        else:
+            # If it already exists, increment likes
+            like.likes += 1
+
+        like.save()
+        
+        # Return response indicating success
+        return Response({"message": "Like added successfully!"}, status=status.HTTP_200_OK)

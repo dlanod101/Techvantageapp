@@ -13,6 +13,13 @@ class Post(models.Model):
     def __str__(self):
         return self.content
     
+class Likes(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="likes")
+    likes = models.IntegerField(default=0)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="post_likes")
+
+    def __str__(self):
+        return self.likes
 
 class Comment(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="comment")

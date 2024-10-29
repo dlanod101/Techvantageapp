@@ -68,11 +68,12 @@ class JobWithFileUploadView(APIView):
         # Get the post content from request data
         title = request.data.get('title')
         description = request.data.get('description')
+        link = request.data.get('link')
         location = request.data.get('location')
         date_published = request.data.get('date_published')
 
         if not title:
-            return Response({"error": "Post title is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Job title is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Get the file from request files
         file = request.FILES.get('file')
@@ -93,6 +94,7 @@ class JobWithFileUploadView(APIView):
                     user=request.user,
                     title=title,
                     description=description,
+                    link=link,
                     location=location,
                     date_published=date_published  # Set post content
                 )
@@ -112,6 +114,7 @@ class JobWithFileUploadView(APIView):
                         "title": job.title,
                         "username": request.user.display_name,
                         "description": job.description,
+                        "link": job.link,
                         "location": job.location,
                         "file_url": uploaded_file.file_url,
                         "date_published": job.date_published
@@ -127,6 +130,7 @@ class JobWithFileUploadView(APIView):
                 user=request.user,
                 title=title,
                 description=description,
+                link=link,
                 location=location,
                 date_published=date_published  # Set post content
                 )
@@ -137,6 +141,7 @@ class JobWithFileUploadView(APIView):
                         "title": job.title,
                         "username": request.user.display_name,
                         "description": job.description,
+                        "link": job.link,
                         "location": job.location,
                         "file_url": None,
                         "date_published": job.date_published
@@ -152,7 +157,7 @@ class JobWithFileUploadView(APIView):
         """
         try:
             # Get all posts by the authenticated user
-            jobs = Job.objects.filter(user=request.user)
+            jobs = Job.objects.all()
 
             # If no jobs are found, return a response
             if not jobs.exists():
@@ -170,12 +175,13 @@ class JobWithFileUploadView(APIView):
                     "title": job.title,
                     "username": request.user.display_name,
                     "description": job.description,
+                    "link": job.link,
                     "location": job.location,
                     "file_url": file_url,
                     "date_published": job.date_published
                 })
 
             return Response(jobs_data, status=status.HTTP_200_OK)
-    
+
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
