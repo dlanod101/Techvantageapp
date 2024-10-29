@@ -1,347 +1,121 @@
 from django.utils import timezone
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from .models import Post, UploadedFile, Comment, Likes  # Models for posts and uploaded files
-from .serializers import CommentSerializer, LikesSerializer
-import mimetypes
-from rest_framework import generics
+from rest_framework import status, generics
+from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
-from utilities.firebase import upload_app_file, delete_file_from_firebase # Your utility function for Firebase upload
+from utilities.firebase import upload_app_file, delete_file_from_firebase
+from .models import Post, UploadedFile, Comment, Like
+from .serializers import CommentSerializer, LikeSerializer
+from django.db import transaction
 
 class PostWithFileUploadView(APIView):
-    """
-    `Authentication` is required
-    -Set the Authentication to Bearer Token and pass the IdToken
-    """
-    permission_classes = [IsAuthenticated]  # Ensure the user is authenticated
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        # Get the post content from request data
-        content = request.data.get('content')
-        color_code = request.data.get('color_code')
-        date_published = request.data.get('date_published')
-
-        if not content:
-            return Response({"error": "Post content is required."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Get the file from request files
-        file = request.FILES.get('file')
-
-        # if not file:
-        #     return Response({"error": "No file provided."}, status=status.HTTP_400_BAD_REQUEST)
-        if file:
-            # Automatically detect content type
-            mime_type, encoding = mimetypes.guess_type(file.name)
-            content_type = mime_type if mime_type else 'application/octet-stream'
-
-            try:
-                # Upload the file to Firebase and get the public URL
-                file_url = upload_app_file(file, 'posts')
-
-                # Create a post associated with the logged-in user
-                post = Post.objects.create(
-                    user=request.user,
-                    content=content,
-                    color_code=color_code,
-                    date_published=date_published  # Set post content
-                )
-
-                # Save the file URL and associate it with the logged-in user and post
-                uploaded_file = UploadedFile.objects.create(
-                    user=request.user,  # Associate with the logged-in user
-                    file_name=file.name,
-                    file_url=file_url,
-                    post=post  # Associate the file with the created post
-                )
-
-                return Response({
-                    "message": "Post and file uploaded successfully.",
-                    "post": {
-                        "id": post.id,
-                        "username": post.user.display_name,
-                        "content": post.content,
-                        "color_code": post.color_code,
-                        "file_url": uploaded_file.file_url,
-                        "date_published": post.date_published
-                    }
-                }, status=status.HTTP_201_CREATED)
-
-            except Exception as e:
-                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-            
-        else:
-            try:
-                post = Post.objects.create(
-                        user=request.user,
-                        content=content,
-                        color_code=color_code,
-                        date_published=date_published
-                  )  # Set post content
-
-                return Response({
-                        "message": "Post and file uploaded successfully.",
-                        "post": {
-                            "id": post.id,
-                            "username": post.user.display_name,
-                            "content": post.content,
-                            "color_code": post.color_code,
-                            "file_url": None,
-                            "date_published": post.date_published
-                        }
-                    }, status=status.HTTP_201_CREATED)
-
-            except Exception as e:
-                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-            
-    def get(self, request):
-        """
-        -`GET` Retrieve posts and their uploaded files for the authenticated user.
-        """
-        try:
-            # Get all posts 
-            posts = Post.objects.all()
-
-            # If no posts are found, return a response
-            if not posts.exists():
-                return Response({"message": "No posts found."}, status=status.HTTP_404_NOT_FOUND)
-
-            # Prepare data for response
-            posts_data = []
-            for post in posts:
-                # Get associated uploaded file for each post
-                uploaded_file = UploadedFile.objects.filter(post=post).first()
-                file_url = uploaded_file.file_url if uploaded_file else None
-                
-                # Get comments associated with the post
-                comments = post.post_comment.all()  # Use related_name to get comments
-                comments_data = [{
-                    "id": comment.id,
-                    "username": comment.user.display_name,  # Assuming user has display_name
-                    "content": comment.content,
-                    "date_published": comment.date_published
-                } for comment in comments]
-
-                likes = post.post_likes.all()
-                likes_data = [{
-                    "id": likes.id,
-                    "username": likes.user.display_name,
-                    "likes":likes.likes
-                } for like in likes]
-                
-                posts_data.append({
-                    "id": post.id,
-                    "username": post.user.display_name,
-                    "content": post.content,
-                    "color_code": post.color_code,
-                    "file_url": file_url,
-                    "date_published": post.date_published,
-                    "comments_data": comments_data,
-                    "likes_data": likes_data
-                })
-
-            return Response(posts_data, status=status.HTTP_200_OK)
-
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-class PostWithFileUploadViewSingleFile(APIView):
-    """
-    -`GET` Retrieve posts and their uploaded files for the authenticated user.
-    """
-    def get(self, request, post_id):
-        try:
-            try:
-                post = Post.objects.get(id=post_id, user=request.user)
-            except Post.DoesNotExist:
-                return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
-
-            # Prepare data for response
-            posts_data = []
-            
-        # Get associated uploaded file for each post
-            uploaded_file = UploadedFile.objects.filter(post=post).first()
-            file_url = uploaded_file.file_url if uploaded_file else None
-
-            # Get comments associated with the post
-            comments = post.post_comment.all()
-            comments_data = [{
-                "id": comment.id,
-                "username": comment.user.display_name,  # Assuming user has display_name
-                "content": comment.content,
-                "date_published": comment.date_published
-            } for comment in comments]
-
-            posts_data.append({
-                "id": post.id,
-                "username": request.user.display_name,
-                "content": post.content,
-                "color_code": post.color_code,
-                "file_url": file_url,
-                "date_published": post.date_published,
-                "comments_data":comments_data
-            }) 
-
-            return Response({
-                "message": "Posts retrieved successfully.",
-                "posts": posts_data
-            }, status=status.HTTP_200_OK)
-
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
-    
-    # PUT (Full update)
-    def put(self, request, post_id):
-        try:
-            post = Post.objects.get(id=post_id, user=request.user)
-        except Post.DoesNotExist:
-            return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
-
         content = request.data.get('content')
         color_code = request.data.get('color_code')
         date_published = request.data.get('date_published', timezone.now())
         file = request.FILES.get('file')
-        
 
         if not content:
             return Response({"error": "Post content is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if file:
-            try:
-                file_url = upload_app_file(file, 'posts')
+        try:
+            with transaction.atomic():
+                # Create post
+                post = Post.objects.create(
+                    user=request.user, content=content, color_code=color_code, date_published=date_published
+                )
 
-                # Update post and uploaded file
-                post.content = content
-                post.color_code = color_code
-                post.date_published = date_published
-                post.save()
+                # Handle file upload if present
+                if file:
+                    file_url = upload_app_file(file, 'posts')
+                    UploadedFile.objects.create(
+                        user=request.user, file_name=file.name, file_url=file_url, post=post
+                    )
 
-                uploaded_file, _ = UploadedFile.objects.update_or_create(post=post, defaults={
-                    "file_name": file.name,
-                    "file_url": file_url,
-                    "user": request.user
-                })
-
-                return Response({
-                    "message": "Post updated successfully.",
-                    "post": {
-                        "id": post.id,
-                        "username": request.user.display_name,
-                        "content": post.content,
-                        "color_code": post.color_code,
-                        "file_url": uploaded_file.file_url,
-                        "date_published": post.date_published
-                    }
-                }, status=status.HTTP_200_OK)
-
-            except Exception as e:
-                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        else:
-            post.content = content
-            post.color_code = color_code
-            post.date_published = date_published
-            post.save()
-
-            return Response({
-                "message": "Post updated successfully.",
-                "post": {
+                response_data = {
                     "id": post.id,
-                    "username": request.user.display_name,
+                    "username": post.user.display_name,
                     "content": post.content,
                     "color_code": post.color_code,
-                    "file_url": None,
-                    "date_published": post.date_published
+                    "file_url": file_url if file else None,
+                    "date_published": post.date_published,
                 }
-            }, status=status.HTTP_200_OK)
-
-    # PATCH (Partial update)
-    def patch(self, request, post_id):
-        try:
-            post = Post.objects.get(id=post_id, user=request.user)
-        except Post.DoesNotExist:
-            return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
-
-        content = request.data.get('content', post.content)
-        color_code = request.data.get("color_code")
-        date_published = request.data.get('date_published', post.date_published)
-        file = request.FILES.get('file')
-
-        if file:
-            try:
-                file_url = upload_app_file(file, 'posts')
-                post.content = content
-                post.color_code = color_code
-                post.date_published = date_published
-                post.save()
-
-                uploaded_file, _ = UploadedFile.objects.update_or_create(post=post, defaults={
-                    "file_name": file.name,
-                    "file_url": file_url,
-                    "user": request.user
-                })
-
-                return Response({
-                    "message": "Post partially updated.",
-                    "post": {
-                        "id": post.id,
-                        "username": request.user.display_name,
-                        "content": post.content,
-                        "color_code": post.color_code,
-                        "file_url": uploaded_file.file_url,
-                        "date_published": post.date_published
-                    }
-                }, status=status.HTTP_200_OK)
-
-            except Exception as e:
-                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        else:
-            post.content = content
-            post.color_code = color_code
-            post.date_published = date_published
-            post.save()
-
-            return Response({
-                "message": "Post partially updated.",
-                "post": {
-                    "id": post.id,
-                    "username": request.user.display_name,
-                    "content": post.content,
-                    "color_code": post.color_code,
-                    "file_url": None,
-                    "date_published": post.date_published
-                }
-            }, status=status.HTTP_200_OK)
-
-    # DELETE (Delete post and associated file)
-    def delete(self, request, post_id):
-        try:
-            post = Post.objects.get(id=post_id, user=request.user)
-            uploaded_file = UploadedFile.objects.filter(post=post).first()
-
-            # Delete the file from Firebase storage if it exists
-            if uploaded_file:
-                try:
-                    # Assuming you have a function to delete files from Firebase
-                    delete_file_from_firebase("posts/uploads/" + uploaded_file.file_name)
-                    uploaded_file.delete()
-                except Exception as e:
-                    return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-            post.delete()
-
-            return Response({"message": "Post and associated file deleted successfully."}, status=status.HTTP_200_OK)
-
-        except Post.DoesNotExist:
-            return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+                return Response({"message": "Post created successfully.", "post": response_data}, status=status.HTTP_201_CREATED)
 
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        
-from .serializers import CommentSerializer
-from django.shortcuts import get_object_or_404
+
+    def get(self, request):
+        posts = Post.objects.select_related('user').prefetch_related('post_comment', 'for_post').all()
+        posts_data = []
+
+        for post in posts:
+            file_url = post.for_post.first().file_url if post.for_post.exists() else None
+            comments_data = [{
+                "id": comment.id,
+                "username": comment.user.display_name,
+                "content": comment.content,
+                "date_published": comment.date_published
+            } for comment in post.post_comment.all()]
+
+            posts_data.append({
+                "id": post.id,
+                "username": post.user.display_name,
+                "content": post.content,
+                "color_code": post.color_code,
+                "file_url": file_url,
+                "date_published": post.date_published,
+                "comments_data": comments_data,
+                "like_count": post.like_count(),
+            })
+
+        return Response(posts_data, status=status.HTTP_200_OK)
+
+class PostWithFileUploadViewSingleFile(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, post_id):
+        post = get_object_or_404(Post.objects.select_related('user').prefetch_related('post_comment', 'for_post'), id=post_id, user=request.user)
+        file_url = post.for_post.first().file_url if post.for_post.exists() else None
+        comments_data = [{
+            "id": comment.id,
+            "username": comment.user.display_name,
+            "content": comment.content,
+            "date_published": comment.date_published
+        } for comment in post.post_comment.all()]
+
+        response_data = {
+            "id": post.id,
+            "username": post.user.display_name,
+            "content": post.content,
+            "color_code": post.color_code,
+            "file_url": file_url,
+            "date_published": post.date_published,
+            "comments_data": comments_data,
+            "like_count": post.like_count(),
+        }
+        return Response({"message": "Post retrieved successfully.", "post": response_data}, status=status.HTTP_200_OK)
+
+    def delete(self, request, post_id):
+        try:
+            post = Post.objects.get(id=post_id, user=request.user)
+            uploaded_file = post.for_post.first()
+
+            if uploaded_file:
+                delete_file_from_firebase("posts/uploads/" + uploaded_file.file_name)
+                uploaded_file.delete()
+
+            post.delete()
+            return Response({"message": "Post deleted successfully."}, status=status.HTTP_200_OK)
+
+        except Post.DoesNotExist:
+            return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+
+# Other views for AddCommentView, ToggleLikeView, etc.
+
 
 class AddCommentView(generics.CreateAPIView):
     serializer_class = CommentSerializer
@@ -350,25 +124,19 @@ class AddCommentView(generics.CreateAPIView):
     def perform_create(self, serializer):
         post = get_object_or_404(Post, id=self.kwargs['post_id'])  # Get the post instance
         serializer.save(user=self.request.user, post=post)  # Save comment with user and post
-
-class AddLikeView(generics.CreateAPIView):
-    serializer_class = LikesSerializer
+        
+class ToggleLikeView(generics.GenericAPIView):
+    serializer_class = LikeSerializer
     permission_classes = [IsAuthenticated]
 
-    def perform_create(self, serializer):
-        post = get_object_or_404(Post, pk=self.kwargs["post_id"])
+    def post(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)
+        like, created = Like.objects.get_or_create(user=request.user, post=post)
         
-        # Check if the user has already liked the post
-        like, created = Likes.objects.get_or_create(user=self.request.user, post=post)
-
-        if created:
-            # If the like object was created, set likes to 1
-            like.likes = 1
-        else:
-            # If it already exists, increment likes
-            like.likes += 1
-
-        like.save()
+        if not created:
+            # Like exists, so we remove it (unlike)
+            like.delete()
+            return Response({"message": "Like removed"}, status=status.HTTP_200_OK)
         
-        # Return response indicating success
-        return Response({"message": "Like added successfully!"}, status=status.HTTP_200_OK)
+        # Like didn't exist, so it was created
+        return Response({"message": "Like added"}, status=status.HTTP_201_CREATED)

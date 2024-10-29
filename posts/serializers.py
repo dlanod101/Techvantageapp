@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Post, UploadedFile, Comment, Likes
+from .models import Post, UploadedFile, Comment, Like
 from users.models import CustomUser
 
 class UploadedFileSerializer(serializers.ModelSerializer):
@@ -17,24 +17,24 @@ class CommentSerializer(serializers.ModelSerializer):
     def get_user(self, obj):
         return obj.user.display_name  # Return the username, or you can return email, etc.
 
-class LikesSerializer(serializers.ModelSerializer):
-    user = serializers.SerializerMethodField()  # Add a method to customize user data
+class LikeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Likes
-        fields = ["user", "likes"]
-
-    def get_user(self, obj):
-        return obj.user.display_name  # Return the username, or you can return email, etc.
+        model = Like
+        fields = ['id', 'user', 'post', 'created_at']
+        read_only_fields = ['user', 'created_at']
     
 class PostSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()  # Add a method to customize user data
     files = UploadedFileSerializer(many=True, read_only=True)
     comments=CommentSerializer(many=True, read_only=True)
-    likes = LikesSerializer(many=True, read_only=True)
+    likes = LikeSerializer(many=True, read_only=True)
+    like_count = serializers.IntegerField(source='like_count', read_only=True)
 
     class Meta:
         model = Post
-        fields = ['user', 'content', 'color_code', 'date_published', 'files', 'comments', "likes"]
+        fields = ['user', 'content', 'color_code', 'date_published', 'files', 'comments', "likes", "like_count"]
 
     def get_user(self, obj):
         return obj.user.display_name  # Return the username, or you can return email, etc.
+    
+    
