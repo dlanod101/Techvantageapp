@@ -139,7 +139,7 @@ class JobWithFileUploadView(APIView):
                     "job": {
                         "id": job.id,
                         "title": job.title,
-                        "username": request.user.display_name,
+                        "username": job.user.display_name,
                         "description": job.description,
                         "link": job.link,
                         "location": job.location,
@@ -173,7 +173,7 @@ class JobWithFileUploadView(APIView):
                 jobs_data.append({
                     "id": job.id,
                     "title": job.title,
-                    "username": request.user.display_name,
+                    "username": job.user.display_name,
                     "description": job.description,
                     "link": job.link,
                     "location": job.location,

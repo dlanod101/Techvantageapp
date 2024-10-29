@@ -6,4 +6,5 @@ urlpatterns = [
     path('post_file_upload/<int:post_id>', views.PostWithFileUploadViewSingleFile.as_view(), name='post-details'),
     path('post/<int:post_id>/add_comment/', views.AddCommentView.as_view(), name='add_comment'),
     path('posts/<int:post_id>/toggle-like/', views.ToggleLikeView.as_view(), name='toggle-like'),
+    path('share/<int:post_id>/', views.SharePostView.as_view(), name='share-post'),
 ]

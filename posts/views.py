@@ -5,7 +5,7 @@ from rest_framework import status, generics
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from utilities.firebase import upload_app_file, delete_file_from_firebase
-from .models import Post, UploadedFile, Comment, Like
+from .models import Post, UploadedFile, Comment, Like, SharedPost
 from .serializers import CommentSerializer, LikeSerializer
 from django.db import transaction
 
@@ -140,3 +140,17 @@ class ToggleLikeView(generics.GenericAPIView):
         
         # Like didn't exist, so it was created
         return Response({"message": "Like added"}, status=status.HTTP_201_CREATED)
+
+class SharePostView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, post_id):
+        post = get_object_or_404(Post, id=post_id)
+        shared_post = SharedPost.objects.create(post=post, user=request.user)
+        return Response({
+            "message": "Post shared successfully.",
+            "shared_post_id": shared_post.id,
+            "post_id": post.id,
+            "user": request.user.display_name,
+            "shared_at": shared_post.shared_at,
+        }, status=status.HTTP_201_CREATED)

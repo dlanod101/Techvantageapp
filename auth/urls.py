@@ -23,5 +23,4 @@ urlpatterns = [
     path('', include('posts.urls')),
     path('', include('jobs.urls')),
     path('', include('profiles.urls')),
-    #path('', include('friends.urls')),
 ]
