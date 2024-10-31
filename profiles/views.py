@@ -2,14 +2,15 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from utilities.firebase import upload_app_file  # Firebase upload helper function
-from .models import UserProfile, Experience, Education, Location, ProfilePicture, Friend
+from .models import UserProfile, Experience, Education, Location, ProfilePicture, Friend, CoverPicture
 from .serializers import (
     UserProfileSerializer,
     ExperienceSerializer,
     EducationSerializer,
     LocationSerializer,
     ProfilePictureSerializer,
-    FriendSerializer
+    FriendSerializer,
+    CoverPictureSerializer
 )
 
 from django.db.models.signals import post_save
@@ -28,6 +29,14 @@ def create_user_profile(sender, instance, created, **kwargs):
         
         # Create a ProfilePicture instance with the default URL
         ProfilePicture.objects.create(
+            user=instance,
+            profile=user_profile,
+            file_name="default-profile-picture.png",
+            file_url=default_file_url
+        )
+
+         # Create a CoverPicture instance with the default URL
+        CoverPicture.objects.create(
             user=instance,
             profile=user_profile,
             file_name="default-profile-picture.png",
@@ -103,7 +112,34 @@ class ProfilePictureUpdateView(generics.RetrieveUpdateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+# CoverPicture Views
+class CoverPictureUpdateView(generics.RetrieveUpdateAPIView):
+    serializer_class = CoverPictureSerializer
+    permission_classes = [IsAuthenticated]
 
+    def get_object(self):
+        # Retrieve or create a profile picture entry for the user if it doesn’t already exist
+        user_profile = UserProfile.objects.get(user=self.request.user)
+        cover_picture, created = CoverPicture.objects.get_or_create(
+            user=self.request.user, profile=user_profile
+        )
+        return cover_picture
+
+    def update(self, request, *args, **kwargs):
+        cover_picture = self.get_object()
+        uploaded_file = request.FILES.get('file')  # Get uploaded file from request
+
+        if uploaded_file:
+            file_url = upload_app_file(uploaded_file, "User Cover Pictures")  # Upload to Firebase and get the URL
+            cover_picture.file_url = file_url  # Update file_url with the new one
+            cover_picture.save()
+            serializer = self.get_serializer(cover_picture)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(
+                {"error": "No file was uploaded."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 # UserProfile Views
 class UserProfileDetailView(generics.RetrieveUpdateAPIView):

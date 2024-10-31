@@ -18,7 +18,11 @@ urlpatterns = [
     path('profile/locations/', views.LocationListCreateView.as_view(), name='location-list-create'),
 
     # Profile Picture
-    path('profile/pictures/', views.ProfilePictureUpdateView.as_view(), name='profile-picture-list-create'),
+    path('profile/profilepicture/', views.ProfilePictureUpdateView.as_view(), name='profile-picture-list-create'),
 
+     # Cover Picture
+    path('profile/coverpicture/', views.CoverPictureUpdateView.as_view(), name='cover-picture-list-create'),
+    
+     # Friends
     path("friends/", views.FriendListCreateView.as_view(), name="friends_list_create"),
 ]
