@@ -8,6 +8,7 @@ from utilities.firebase import upload_app_file, delete_file_from_firebase
 from .models import Post, UploadedFile, Comment, Like, SharedPost
 from .serializers import CommentSerializer, LikeSerializer
 from django.db import transaction
+from django.core.exceptions import ObjectDoesNotExist
 
 class PostWithFileUploadView(APIView):
     permission_classes = [IsAuthenticated]
@@ -77,27 +78,37 @@ class PostWithFileUploadView(APIView):
 class PostWithFileUploadViewSingleFile(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, post_id):
-        post = get_object_or_404(Post.objects.select_related('user').prefetch_related('post_comment', 'for_post'), id=post_id, user=request.user)
-        file_url = post.for_post.first().file_url if post.for_post.exists() else None
-        comments_data = [{
-            "id": comment.id,
-            "username": comment.user.display_name,
-            "content": comment.content,
-            "date_published": comment.date_published
-        } for comment in post.post_comment.all()]
 
-        response_data = {
-            "id": post.id,
-            "username": post.user.display_name,
-            "content": post.content,
-            "color_code": post.color_code,
-            "file_url": file_url,
-            "date_published": post.date_published,
-            "comments_data": comments_data,
-            "like_count": post.like_count(),
-        }
-        return Response({"message": "Post retrieved successfully.", "post": response_data}, status=status.HTTP_200_OK)
+    def get(self, request, post_id):
+        try:
+            # Retrieve the post or raise an exception if not found
+            post = Post.objects.get(id=post_id)
+
+            # Fetch related data if available
+            file_url = post.for_post.first().file_url if post.for_post.exists() else None  # Assuming for_post is the related name for UploadedFile
+            comments_data = [{
+                "id": comment.id,
+                "username": comment.user.display_name,  # Assuming comment has a user field with display_name
+                "content": comment.content,
+                "date_published": comment.date_published # Convert to ISO format
+            } for comment in post.post_comment.all()]  # Assuming post_comment is the related name for Comment
+
+            response_data = {
+                "id": post.id,
+                "username": post.user.display_name,  # Assuming post has a user field with display_name
+                "content": post.content,
+                "color_code": post.color_code,
+                "file_url": file_url,
+                "date_published": post.date_published,  # Convert to ISO format
+                "comments_data": comments_data,
+                "like_count": post.like_count(),  # Assuming you have a method to get the like count
+            }
+
+            return Response({"message": "Post retrieved successfully.", "post": response_data}, status=status.HTTP_200_OK)
+
+        except ObjectDoesNotExist:
+            return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+
 
     def delete(self, request, post_id):
         try:

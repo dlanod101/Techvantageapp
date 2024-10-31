@@ -1,3 +1,4 @@
+import random
 from django.db import models
 from users.models import CustomUser
 
@@ -69,11 +70,24 @@ class CoverPicture(models.Model):
 
     def __str__(self):
         return f"{self.file_url}"
-    
-class Friend(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="friend")
-    profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name="friends")
-    is_friend = models.BooleanField(default=False)
 
-    def __str__(self):
-        return f"{self.user.display_name} is friends with {self.profile.user.display_name}" if self.is_friend else "Not friends"
+
+class FriendRequest(models.Model):
+    sender = models.ForeignKey(CustomUser, related_name="sent_requests", on_delete=models.CASCADE)
+    receiver = models.ForeignKey(CustomUser, related_name="received_requests", on_delete=models.CASCADE)
+    status = models.CharField(max_length=10, choices=[('sent', 'Sent'), ('accepted', 'Accepted'), ('rejected', 'Rejected')], default='sent')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class Friend(models.Model):
+    user = models.ForeignKey(CustomUser, related_name="friends", on_delete=models.CASCADE)
+    friend = models.ForeignKey(CustomUser, related_name="friend_of", on_delete=models.CASCADE)
+    chat_id = models.CharField(max_length=6, unique=True)
+    
+    def generate_chat_id():
+        """Generate a unique 6-digit chat ID"""
+        return ''.join(str(random.randint(0, 9)) for _ in range(6))
+
+    def save(self, *args, **kwargs):
+        if not self.chat_id:
+            self.chat_id = self.generate_chat_id()
+        super().save(*args, **kwargs)

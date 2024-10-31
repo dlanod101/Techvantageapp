@@ -23,6 +23,11 @@ urlpatterns = [
      # Cover Picture
     path('profile/coverpicture/', views.CoverPictureUpdateView.as_view(), name='cover-picture-list-create'),
     
-     # Friends
-    path("friends/", views.FriendListCreateView.as_view(), name="friends_list_create"),
+    path('send-friend-request/<str:receiver_uid>/', views.send_friend_request, name='send_friend_request'),
+
+    path('list-friend-requests/', views.list_friend_requests, name='list_friend_requests'),
+
+    path('accept-friend-request/<str:sender_uid>/', views.accept_friend_request, name='accept_friend_request'),
+
+    path('list-friends/', views.list_friends, name='list_friends'),
 ]

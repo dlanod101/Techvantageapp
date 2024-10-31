@@ -161,26 +161,50 @@ class GetProfiles(generics.ListAPIView):
     def get_queryset(self):
         return UserProfile.objects.all()
 
-class FriendListCreateView(generics.ListCreateAPIView):
-    serializer_class = FriendSerializer
-    permission_classes = [IsAuthenticated]
+from django.shortcuts import get_object_or_404
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
+from .models import FriendRequest, Friend, CustomUser
+from .serializers import FriendRequestSerializer, FriendSerializer
 
-    def get_queryset(self):
-        # Filter friends where the authenticated user is the main user and is_friend is True
-        return Friend.objects.filter(user=self.request.user, is_friend=True)
+# Send Friend Request
+@api_view(['POST'])
+def send_friend_request(request, receiver_uid):
+    receiver = get_object_or_404(CustomUser, uid=receiver_uid)
+    if receiver == request.user:
+        return Response({"message": "You cannot send a friend request to yourself."}, status=status.HTTP_400_BAD_REQUEST)
+    
+    friend_request, created = FriendRequest.objects.get_or_create(sender=request.user, receiver=receiver)
+    if created:
+        return Response({"message": "Friend request sent"}, status=status.HTTP_201_CREATED)
+    return Response({"message": "Friend request already sent"}, status=status.HTTP_400_BAD_REQUEST)
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        
-        headers = self.get_success_headers(serializer.data)
-        return Response(
-            {"message": "Friend added successfully!", "friend": serializer.data},
-            status=status.HTTP_201_CREATED,
-            headers=headers
-        )
+# List Friend Requests
+@api_view(['GET'])
+def list_friend_requests(request):
+    received_requests = FriendRequest.objects.filter(receiver=request.user, status='sent')
+    serializer = FriendRequestSerializer(received_requests, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def perform_create(self, serializer):
-        # Set the current user as the 'user' for the new friend entry
-        serializer.save(user=self.request.user)
+# Accept Friend Request
+@api_view(['POST'])
+def accept_friend_request(request, sender_uid):
+    sender = get_object_or_404(CustomUser, uid=sender_uid)
+    friend_request = get_object_or_404(FriendRequest, sender=sender, receiver=request.user, status='sent')
+    friend_request.status = 'accepted'
+    friend_request.save()
+
+    # Create mutual Friend objects with unique chat ID
+    Friend.objects.create(user=request.user, friend=sender)
+    Friend.objects.create(user=sender, friend=request.user)
+
+    return Response({"message": "Friend request accepted"}, status=status.HTTP_200_OK)
+
+# List Friends
+@api_view(['GET'])
+def list_friends(request):
+    friends = Friend.objects.filter(user=request.user)
+    serializer = FriendSerializer(friends, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
