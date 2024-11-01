@@ -17,6 +17,9 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from users.models import CustomUser
 from .models import UserProfile
+import string
+import random
+
 
 @receiver(post_save, sender=CustomUser)
 def create_user_profile(sender, instance, created, **kwargs):
@@ -102,6 +105,7 @@ class ProfilePictureUpdateView(generics.RetrieveUpdateAPIView):
 
         if uploaded_file:
             file_url = upload_app_file(uploaded_file, "User Profiles")  # Upload to Firebase and get the URL
+            profile_picture.file_name = f"{request.user.display_name} Profile Picture"
             profile_picture.file_url = file_url  # Update file_url with the new one
             profile_picture.save()
             serializer = self.get_serializer(profile_picture)
@@ -131,6 +135,7 @@ class CoverPictureUpdateView(generics.RetrieveUpdateAPIView):
 
         if uploaded_file:
             file_url = upload_app_file(uploaded_file, "User Cover Pictures")  # Upload to Firebase and get the URL
+            cover_picture.file_name = f"{request.user.display_name} Cover Picture"
             cover_picture.file_url = file_url  # Update file_url with the new one
             cover_picture.save()
             serializer = self.get_serializer(cover_picture)
@@ -188,6 +193,11 @@ def list_friend_requests(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 # Accept Friend Request
+def generate_chat_id():
+    """Generate a unique 6-digit chat ID."""
+    return ''.join(random.choices(string.digits, k=6))
+
+
 @api_view(['POST'])
 def accept_friend_request(request, sender_uid):
     sender = get_object_or_404(CustomUser, uid=sender_uid)
@@ -196,15 +206,17 @@ def accept_friend_request(request, sender_uid):
     friend_request.save()
 
     # Create mutual Friend objects with unique chat ID
-    Friend.objects.create(user=request.user, friend=sender)
-    Friend.objects.create(user=sender, friend=request.user)
+    chat_id = Friend.generate_chat_id()  # Call the method to generate a unique chat ID
+    Friend.objects.create(user=request.user, friend=sender, chat_id=chat_id)
+    Friend.objects.create(user=sender, friend=request.user, chat_id=chat_id)
 
     return Response({"message": "Friend request accepted"}, status=status.HTTP_200_OK)
 
-# List Friends
 @api_view(['GET'])
 def list_friends(request):
     friends = Friend.objects.filter(user=request.user)
+    
     serializer = FriendSerializer(friends, many=True)
+
     return Response(serializer.data, status=status.HTTP_200_OK)
 

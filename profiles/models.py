@@ -81,7 +81,7 @@ class FriendRequest(models.Model):
 class Friend(models.Model):
     user = models.ForeignKey(CustomUser, related_name="friends", on_delete=models.CASCADE)
     friend = models.ForeignKey(CustomUser, related_name="friend_of", on_delete=models.CASCADE)
-    chat_id = models.CharField(max_length=6, unique=True)
+    chat_id = models.CharField(max_length=6)
     
     def generate_chat_id():
         """Generate a unique 6-digit chat ID"""

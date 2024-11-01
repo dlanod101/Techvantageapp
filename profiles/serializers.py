@@ -40,6 +40,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
     experiences = ExperienceSerializer(many=True, read_only=True)  # Nested serializer
     educations = EducationSerializer(many=True, read_only=True)
     locations = LocationSerializer(many=True, read_only=True)
+    profile_pictures = ProfilePictureSerializer(many=True, read_only=True)
+    cover_pictures = CoverPictureSerializer(many=True, read_only=True)
 
     class Meta:
         model = UserProfile
@@ -50,8 +52,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ['user', 'date_published']
 
     def get_user(self, obj):
-        return obj.user.display_name  # Return the username, or you can return email, etc.
-
+        return {
+            "id": obj.user.uid,  # Return the username, or you can return email, etc.
+            "display_name": obj.user.display_name
+        }
 
 # Serializer for FriendRequest
 class FriendRequestSerializer(serializers.ModelSerializer):
@@ -62,11 +66,30 @@ class FriendRequestSerializer(serializers.ModelSerializer):
         model = FriendRequest
         fields = ['id', 'sender', 'receiver', 'status', 'created_at']
 
-# Serializer for Friend
-class FriendSerializer(serializers.ModelSerializer):
-    friend = serializers.SerializerMethodField()  # Add a method to customize user data
+    def get_sender(self, obj):
+        return obj.sender.display_name
     
+    def get_receiver(self, obj):
+        return obj.receiver.display_name
+    
+# # Serializer for Friend
+# class FriendSerializer(serializers.ModelSerializer):
+#     friend = serializers.SerializerMethodField()  # Add a method to customize user data
+#     friend_uid = serializers.SerializerMethodField()
+#     class Meta:
+#         model = Friend
+#         fields = ['friend', 'friend_uid', 'chat_id']
+
+#     def get_friend(self, obj):
+#         return obj.friend.display_name
+    
+#     def get_friend_uid(self, obj):
+#         return obj.friend.uid
+
+class FriendSerializer(serializers.ModelSerializer):
+    friend_name = serializers.CharField(source='friend.display_name')
+    friend_uid = serializers.CharField(source='friend.uid')
+
     class Meta:
         model = Friend
-        fields = ['friend', 'chat_id']
-
+        fields = ['friend_uid', 'friend_name', 'chat_id']
