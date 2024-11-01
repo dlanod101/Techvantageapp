@@ -160,7 +160,7 @@ class SharePostView(APIView):
         post = get_object_or_404(Post, id=post_id)
 
         # Generate the URL for the uploaded post
-        post_url = f"https://techvantageapp.vercel.app/post_file_upload/{post_id}"
+        post_url = f"http://localhost:5173/viewpost/{post_id}"
 
         return Response({
             "message": "Post URL retrieved successfully.",
