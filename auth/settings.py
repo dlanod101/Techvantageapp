@@ -77,7 +77,7 @@ REST_FRAMEWORK = {
 }
 
 # Firebase settings
-FIREBASE_WEB_API_KEY = 'AIzaSyCRYX_OXkmQ_4R4HWdztFhyf7WBUxHeavM'
+FIREBASE_WEB_API_KEY = 'AIzaSyAbZtw8zMP-7-MF4pT5KMEGMXxpjksyKTU'
 
 TEMPLATES = [
     {
@@ -112,9 +112,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'postgres',                # Replace with your Supabase DB name
-        'USER': 'postgres.qqkytnlnabqmnjnnxjjb',                # Replace with your Supabase DB user
-        'PASSWORD': 'offiong102011',        # Replace with your Supabase DB password
-        'HOST': 'aws-0-us-east-1.pooler.supabase.com',        # Replace with your Supabase DB host
+        'USER': 'postgres.yzxlzkmemzqaougdtmtm',                # Replace with your Supabase DB user
+        'PASSWORD': 'Techvantage-Social-App',        # Replace with your Supabase DB password
+        'HOST': 'aws-0-eu-west-2.pooler.supabase.com',        # Replace with your Supabase DB host
         'PORT': '6543',                         # Default PostgreSQL port
     }
 }

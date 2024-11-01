@@ -23,7 +23,7 @@ cred = credentials.Certificate({
 })
 
 firebase_admin.initialize_app(cred, {
-    'storageBucket': 'newproject-7ad97.appspot.com'
+    'storageBucket': 'techvantage-social-app.firebasestorage.app'
 })
 
 def verify_firebase_token(id_token):
