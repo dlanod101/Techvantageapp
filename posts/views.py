@@ -5,7 +5,7 @@ from rest_framework import status, generics
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from utilities.firebase import upload_app_file, delete_file_from_firebase
-from .models import Post, UploadedFile, Comment, Like, SharedPost
+from .models import Post, UploadedFile, Comment, Like
 from .serializers import CommentSerializer, LikeSerializer
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
