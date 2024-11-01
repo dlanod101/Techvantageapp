@@ -152,7 +152,6 @@ class ToggleLikeView(generics.GenericAPIView):
         # Like didn't exist, so it was created
         return Response({"message": "Like added"}, status=status.HTTP_201_CREATED)
 
-from django.urls import reverse
 
 class SharePostView(APIView):
     permission_classes = [IsAuthenticated]
@@ -161,7 +160,7 @@ class SharePostView(APIView):
         post = get_object_or_404(Post, id=post_id)
 
         # Generate the URL for the uploaded post
-        post_url = request.build_absolute_uri(reverse('post-file-upload', args=[post.id]))
+        post_url = f"https://techvantageapp.vercel.app/post_file_upload/{post_id}"
 
         return Response({
             "message": "Post URL retrieved successfully.",
