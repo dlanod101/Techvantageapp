@@ -152,16 +152,20 @@ class ToggleLikeView(generics.GenericAPIView):
         # Like didn't exist, so it was created
         return Response({"message": "Like added"}, status=status.HTTP_201_CREATED)
 
+from django.urls import reverse
+
 class SharePostView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, post_id):
+    def get(self, request, post_id):
         post = get_object_or_404(Post, id=post_id)
-        shared_post = SharedPost.objects.create(post=post, user=request.user)
+
+        # Generate the URL for the uploaded post
+        post_url = request.build_absolute_uri(reverse('post-file-upload', args=[post.id]))
+
         return Response({
-            "message": "Post shared successfully.",
-            "shared_post_id": shared_post.id,
+            "message": "Post URL retrieved successfully.",
+            "post_url": post_url,
             "post_id": post.id,
             "user": request.user.display_name,
-            "shared_at": shared_post.shared_at,
-        }, status=status.HTTP_201_CREATED)
+        }, status=status.HTTP_200_OK)
