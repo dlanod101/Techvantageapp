@@ -77,7 +77,7 @@ REST_FRAMEWORK = {
 }
 
 # Firebase settings
-FIREBASE_WEB_API_KEY = 'AIzaSyAbZtw8zMP-7-MF4pT5KMEGMXxpjksyKTU'
+FIREBASE_WEB_API_KEY = 'AIzaSyCRYX_OXkmQ_4R4HWdztFhyf7WBUxHeavM'
 
 TEMPLATES = [
     {
