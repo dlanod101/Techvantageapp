@@ -67,7 +67,10 @@ class FriendRequestSerializer(serializers.ModelSerializer):
         fields = ['id', 'sender', 'receiver', 'status', 'created_at']
 
     def get_sender(self, obj):
-        return obj.sender.display_name
+        return {
+            "id": obj.sender.uid,  # Return the username, or you can return email, etc.
+            "display_name": obj.sender.display_name
+        }
     
     def get_receiver(self, obj):
         return obj.receiver.display_name
