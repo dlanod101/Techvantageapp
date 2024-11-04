@@ -26,6 +26,7 @@ firebase_admin.initialize_app(cred, {
     'storageBucket': 'newproject-7ad97.appspot.com'
 })
 
+
 def verify_firebase_token(id_token):
     """
     Verifies the Firebase ID token sent by the client.
