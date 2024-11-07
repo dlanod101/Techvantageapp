@@ -66,6 +66,7 @@ def login_firebase_user(email, password):
     else:
         raise exceptions.AuthenticationFailed(data.get("error", {}).get("message", "Authentication failed"))
 
+
 def logout_firebase_user(uid):
     """
     Revokes refresh tokens for the user, effectively logging them out.

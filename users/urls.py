@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import RegisterAPIView, LoginAPIView, LogoutAPIView, FileUploadView, RetrieveFileView
+from .views import RegisterAPIView, LoginAPIView, LogoutAPIView, FileUploadView, RetrieveFileView, refresh_id_token
 
 from django.urls import re_path
 from rest_framework import permissions
@@ -26,6 +26,7 @@ urlpatterns = [
     path('logout/', LogoutAPIView.as_view(), name='logout'),
     path('upload/', FileUploadView.as_view(), name='file-upload'),
     path('retrieve/<int:file_id>', RetrieveFileView.as_view(), name='file-retrieve'),
+    path('refresh_id_token/', refresh_id_token, name='refresh_id_token'),
 
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

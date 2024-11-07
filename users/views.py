@@ -7,6 +7,10 @@ from .models import CustomUser
 from rest_framework.permissions import IsAuthenticated
 from utilities.authentication import FirebaseAuthentication
 from utilities.utils import ResponseInfo
+from django.http import JsonResponse
+from rest_framework.decorators import api_view
+import requests
+from django.conf import settings
 
 class RegisterAPIView(CreateAPIView):
     """
@@ -118,6 +122,30 @@ class LogoutAPIView(CreateAPIView):
 #             return Response({"file_url": file_url}, status=status.HTTP_201_CREATED)
 #         except Exception as e:
 #             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+def refresh_id_token(request):
+    refresh_token = request.data.get('refresh_token')
+    
+    if not refresh_token:
+        return JsonResponse({'error': 'Refresh token is required'}, status=400)
+    
+    FIREBASE_WEB_API_KEY = settings.FIREBASE_WEB_API_KEY
+
+    # Firebase endpoint to refresh ID token
+    url = f"https://securetoken.googleapis.com/v1/token?key={FIREBASE_WEB_API_KEY}"
+    
+    payload = {
+        'grant_type': 'refresh_token',
+        'refresh_token': refresh_token
+    }
+    
+    response = requests.post(url, data=payload)
+    
+    if response.status_code == 200:
+        return JsonResponse(response.json())
+    else:
+        return JsonResponse({'error': 'Failed to refresh ID token'}, status=response.status_code)
 
 
 from rest_framework.views import APIView
