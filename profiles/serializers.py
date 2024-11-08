@@ -61,10 +61,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
 class FriendRequestSerializer(serializers.ModelSerializer):
     sender = serializers.SerializerMethodField()  # Add a method to customize user data
     receiver = serializers.SerializerMethodField()  # Add a method to customize user data
+    sender_profile_picture = serializers.SerializerMethodField()
     
     class Meta:
         model = FriendRequest
-        fields = ['id', 'sender', 'receiver', 'status', 'created_at']
+        fields = ['id', 'sender', 'sender_profile_picture', 'receiver', 'status', 'created_at']
 
     def get_sender(self, obj):
         return {
@@ -72,27 +73,34 @@ class FriendRequestSerializer(serializers.ModelSerializer):
             "display_name": obj.sender.display_name
         }
     
+    def get_sender_profile_picture(self, obj):
+        # Assuming `obj.sender` has a `UserProfile` with a related `ProfilePicture`
+        user_profile = obj.sender.profile_user.first()
+        if user_profile:
+            profile_picture = user_profile.profile_pictures.first()  # Get the first profile picture, if any
+            return profile_picture.file_url if profile_picture else None
+        return None
+    
     def get_receiver(self, obj):
         return obj.receiver.display_name
-    
-# # Serializer for Friend
-# class FriendSerializer(serializers.ModelSerializer):
-#     friend = serializers.SerializerMethodField()  # Add a method to customize user data
-#     friend_uid = serializers.SerializerMethodField()
-#     class Meta:
-#         model = Friend
-#         fields = ['friend', 'friend_uid', 'chat_id']
-
-#     def get_friend(self, obj):
-#         return obj.friend.display_name
-    
-#     def get_friend_uid(self, obj):
-#         return obj.friend.uid
 
 class FriendSerializer(serializers.ModelSerializer):
+    friend = serializers.SerializerMethodField()
     friend_name = serializers.CharField(source='friend.display_name')
     friend_uid = serializers.CharField(source='friend.uid')
+    friend_profile_picture = serializers.SerializerMethodField()
 
     class Meta:
         model = Friend
-        fields = ['friend_uid', 'friend_name', 'chat_id']
+        fields = ['friend', 'friend_uid', 'friend_name', 'friend_profile_picture', 'chat_id']
+
+    def get_friend(self, obj):
+        return obj.friend.uid
+    
+    def get_friend_profile_picture(self, obj):
+        # Access the UserProfile, then the ProfilePicture from that UserProfile
+        user_profile = obj.friend.profile_user.first()  # Get the associated UserProfile
+        if user_profile:
+            profile_picture = user_profile.profile_pictures.first()  # Get the first profile picture, if any
+            return profile_picture.file_url if profile_picture else None
+        return None

@@ -43,6 +43,7 @@ class UserProfile(models.Model):
     about = models.TextField(blank=True, default="Nothing For Now")
     skills = models.CharField(max_length=255, blank=True)
     interest = models.CharField(max_length=255, blank=True)
+    current_position = models.CharField(max_length=50, default="Nothing For Now")
     date_published = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
