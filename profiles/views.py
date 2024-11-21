@@ -159,12 +159,20 @@ class UserProfileDetailView(generics.RetrieveUpdateAPIView):
         response.data["message"] = "UserProfile updated successfully!"
         return response
 
-class GetProfiles(generics.ListAPIView):
-    serializer_class = UserProfileSerializer
-    permission_classes = [IsAuthenticated]
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .models import UserProfile
+from .serializers import UserProfileSerializer
 
-     def get_queryset(self):
-         return UserProfile.objects.all()
+class GetProfiles(APIView):
+    def get(self, request, format=None):
+        profiles = UserProfile.objects.all()  # Fetch all user profiles
+        if not profiles.exists():  # Check if no profiles are available
+            return Response({"message": "No profiles found."}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = UserProfileSerializer(profiles, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 from django.shortcuts import get_object_or_404
 from rest_framework import status
