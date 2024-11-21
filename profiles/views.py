@@ -159,12 +159,12 @@ class UserProfileDetailView(generics.RetrieveUpdateAPIView):
         response.data["message"] = "UserProfile updated successfully!"
         return response
 
-class GetProfiles(generics.RetrieveAPIView):
+class GetProfiles(generics.ListAPIView):
     serializer_class = UserProfileSerializer
     permission_classes = [IsAuthenticated]
 
-    # def get_queryset(self):
-    #     return UserProfile.objects.all()
+     def get_queryset(self):
+         return UserProfile.objects.all()
 
 from django.shortcuts import get_object_or_404
 from rest_framework import status
