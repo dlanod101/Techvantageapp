@@ -31,8 +31,7 @@ class JobRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 class JobFind(APIView):
     """
     `Authentication` is required
-    - `GET /jobfind/`: Retrieve all posts
-    """
+jobs    """
     @swagger_auto_schema(
         manual_parameters=[
             openapi.Parameter(

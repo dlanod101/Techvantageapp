@@ -6,7 +6,7 @@ urlpatterns = [
     path('profile/', views.UserProfileDetailView.as_view(), name='user-profile-detail'),
 
     # UserProfile
-    path('profile_all/', views.GetProfiles.as_view(), name='user-profile-detail-all'),
+    path('profile_all/', views.ProfileFind.as_view(), name='user-profile-detail-all'),
 
     # Experience
     path('profile/experiences/', views.ExperienceListCreateView.as_view(), name='experience-list-create'),

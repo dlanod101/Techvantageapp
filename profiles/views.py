@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from utilities.firebase import upload_app_file  # Firebase upload helper function
 from .models import UserProfile, Experience, Education, Location, ProfilePicture, Friend, CoverPicture
+from rest_framework.views import APIView
 from .serializers import (
     UserProfileSerializer,
     ExperienceSerializer,
@@ -159,20 +160,50 @@ class UserProfileDetailView(generics.RetrieveUpdateAPIView):
         response.data["message"] = "UserProfile updated successfully!"
         return response
 
-class GetProfiles(generics.RetrieveAPIView):
-    serializer_class = UserProfileSerializer
+    
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from django.db.models import Prefetch
+
+class ProfileFind(APIView):
     permission_classes = [IsAuthenticated]
 
-    # def get_queryset(self):
-    #     return UserProfile.objects.all()
+    def get(self, request):
+        user = request.user
 
+        # Prefetch related profile pictures to minimize queries
+        profiles = UserProfile.objects.exclude(user=user).prefetch_related(
+            Prefetch('profile_pictures', to_attr='prefetched_pictures')
+        )
+
+        # Format the response data
+        profiles_data = [
+            {
+                "id": profile.id,
+                "user": profile.user.display_name,
+                "user_id": profile.user.uid,
+                "profile_picture": [
+                    {"file_url": pic.file_url} for pic in profile.prefetched_pictures
+                ],
+                "about": profile.about,
+                # Add other fields as needed
+            }
+            for profile in profiles
+        ]
+
+        return Response(profiles_data, status=status.HTTP_200_OK)
+
+
+
+    
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from .models import FriendRequest, Friend, CustomUser
 from .serializers import FriendRequestSerializer, FriendSerializer
-
 # Send Friend Request
 @api_view(['POST'])
 def send_friend_request(request, receiver_uid):
