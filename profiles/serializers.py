@@ -70,7 +70,8 @@ class FriendRequestSerializer(serializers.ModelSerializer):
     def get_sender(self, obj):
         return {
             "id": obj.sender.uid,  # Return the username, or you can return email, etc.
-            "display_name": obj.sender.display_name
+            "display_name": obj.sender.display_name,
+            "profile_id": obj.sender.profile_user.id
         }
     
     def get_sender_profile_picture(self, obj):
@@ -88,15 +89,19 @@ class FriendSerializer(serializers.ModelSerializer):
     friend = serializers.SerializerMethodField()
     friend_name = serializers.CharField(source='friend.display_name')
     friend_uid = serializers.CharField(source='friend.uid')
+    friend_profile_id = serializers.SerializerMethodField()
     friend_profile_picture = serializers.SerializerMethodField()
 
     class Meta:
         model = Friend
-        fields = ['friend', 'friend_uid', 'friend_name', 'friend_profile_picture', 'chat_id']
+        fields = ['friend', 'friend_profile_id' 'friend_uid', 'friend_name', 'friend_profile_picture', 'chat_id']
 
     def get_friend(self, obj):
         return obj.friend.uid
     
+    def get_friend_profile_id(self, obj):
+        return obj.friend.profile_user.id
+
     def get_friend_profile_picture(self, obj):
         # Access the UserProfile, then the ProfilePicture from that UserProfile
         user_profile = obj.friend.profile_user.first()  # Get the associated UserProfile
