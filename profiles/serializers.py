@@ -104,3 +104,23 @@ class FriendSerializer(serializers.ModelSerializer):
             profile_picture = user_profile.profile_pictures.first()  # Get the first profile picture, if any
             return profile_picture.file_url if profile_picture else None
         return None
+
+# class ApiResponseSerializer(serializers.Serializer):
+#     id = serializers.BooleanField()
+#     sender = serializers.JSONField()
+#     sender_profile_picture = serializers.JSONField(required=False, allow_null=True)  # Adjust field type as necessary
+#     receiver = serializers.JSONField(required=False, allow_null=True)
+#     status = serializers.BooleanField()
+#     [
+#     {
+#         "id": 43,
+#         "sender": {
+#             "id": "XnYkz31mmqPocKLjZJQmlAcYc3i2",
+#             "display_name": "Donald"
+#         },
+#         "sender_profile_picture": "https://storage.googleapis.com/newproject-7ad97.appspot.com/User%20Profiles/uploads/71a57c672a518048e01847f4b728da23.jpg",
+#         "receiver": "Donnie",
+#         "status": "sent",
+#         "created_at": "2024-11-27T07:42:03.262995Z"
+#     }
+# ]

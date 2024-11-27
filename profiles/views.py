@@ -1,3 +1,5 @@
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -12,7 +14,8 @@ from .serializers import (
     LocationSerializer,
     ProfilePictureSerializer,
     FriendSerializer,
-    CoverPictureSerializer
+    CoverPictureSerializer,
+    #ApiResponseSerializer
 )
 
 from django.db.models.signals import post_save
@@ -365,7 +368,12 @@ def send_friend_request(request, receiver_uid):
         return Response({"message": "Friend request sent"}, status=status.HTTP_201_CREATED)
     return Response({"message": "Friend request already sent"}, status=status.HTTP_400_BAD_REQUEST)
 
-# List Friend Requests
+@swagger_auto_schema(
+    method='get',
+    responses={200: FriendRequestSerializer},
+    operation_summary="List Friend Request",
+    operation_description="Retrieve a list of all friend requests for the authenticated user."
+)
 @api_view(['GET'])
 def list_friend_requests(request):
     received_requests = FriendRequest.objects.filter(receiver=request.user, status='sent')
@@ -392,6 +400,12 @@ def accept_friend_request(request, sender_uid):
 
     return Response({"message": "Friend request accepted"}, status=status.HTTP_200_OK)
 
+@swagger_auto_schema(
+    method='get',
+    responses={200: FriendSerializer},
+    operation_summary="List Friends",
+    operation_description="Retrieve a list of all friends for the authenticated user."
+)
 @api_view(['GET'])
 def list_friends(request):
     friends = Friend.objects.filter(user=request.user)
