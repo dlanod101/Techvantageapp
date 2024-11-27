@@ -61,6 +61,12 @@ class ExperienceListCreateView(generics.ListCreateAPIView):
         user_profile = UserProfile.objects.get(user=self.request.user)
         serializer.save(user_profile=user_profile)
 
+class ExperienceUpdateDelete(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Experience.objects.all()
+    serializer_class = ExperienceSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = 'pk'
+
 
 # Education Views
 class EducationListCreateView(generics.ListCreateAPIView):

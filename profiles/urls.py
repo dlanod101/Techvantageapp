@@ -13,6 +13,9 @@ urlpatterns = [
     # Experience
     path('profile/experiences/', views.ExperienceListCreateView.as_view(), name='experience-list-create'),
 
+
+    path('profile/experiences/<int:pk>/', views.ExperienceUpdateDelete.as_view(), name='experience-update-delete'),
+
     # Education
     path('profile/educations/', views.EducationListCreateView.as_view(), name='education-list-create'),
 
