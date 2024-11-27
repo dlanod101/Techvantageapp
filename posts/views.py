@@ -57,6 +57,7 @@ class PostWithFileUploadView(APIView):
             file_url = post.for_post.first().file_url if post.for_post.exists() else None
             comments_data = [{
                 "id": comment.id,
+                "userid": comment.user.id,
                 "username": comment.user.display_name,
                 "content": comment.content,
                 "date_published": comment.date_published
@@ -64,6 +65,7 @@ class PostWithFileUploadView(APIView):
 
             posts_data.append({
                 "id": post.id,
+                "userid": post.user.id,
                 "username": post.user.display_name,
                 "content": post.content,
                 "color_code": post.color_code,
