@@ -58,10 +58,14 @@ class PostWithFileUploadView(APIView):
         for post in posts:
             pk = post.user.uid
             profile =  UserProfile.objects.get(user=post.user)
+            profile_picture = profile.profile_pictures.first().file_url if profile.profile_pictures.exists() else None 
+
             file_url = post.for_post.first().file_url if post.for_post.exists() else None
+
             comments_data = [{
                 "id": comment.id,
                 "userid": profile.id,
+                "profile_picture": profile_picture,
                 "username": comment.user.display_name,
                 "content": comment.content,
                 "date_published": comment.date_published
@@ -70,6 +74,7 @@ class PostWithFileUploadView(APIView):
             posts_data.append({
                 "id": post.id,
                 "userid": profile.id,
+                "profile_picture": profile_picture,
                 "username": post.user.display_name,
                 "content": post.content,
                 "color_code": post.color_code,
