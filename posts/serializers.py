@@ -25,6 +25,7 @@ class LikeSerializer(serializers.ModelSerializer):
     
 class PostSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()  # Add a method to customize user data
+    profile = serializers.SerializerMethodField()
     files = UploadedFileSerializer(many=True, read_only=True)
     comments=CommentSerializer(many=True, read_only=True)
     likes = LikeSerializer(many=True, read_only=True)
@@ -32,9 +33,11 @@ class PostSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Post
-        fields = ['user', 'content', 'color_code', 'date_published', 'files', 'comments', "likes", "like_count"]
+        fields = ['user', 'profile', 'content', 'color_code', 'date_published', 'files', 'comments', "likes", "like_count"]
 
     def get_user(self, obj):
         return obj.user.display_name  # Return the username, or you can return email, etc.
     
+    def get_profile(self, obj):
+        return obj.profile.id
     

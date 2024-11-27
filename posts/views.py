@@ -9,6 +9,8 @@ from .models import Post, UploadedFile, Comment, Like
 from .serializers import CommentSerializer, LikeSerializer
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
+from users.models import CustomUser
+from django.db.models import Prefetch
 
 class PostWithFileUploadView(APIView):
     permission_classes = [IsAuthenticated]
@@ -49,33 +51,51 @@ class PostWithFileUploadView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+    
+
     def get(self, request):
-        posts = Post.objects.select_related('user').prefetch_related('post_comment', 'for_post').all()
-        posts_data = []
+        # Optimize queries with select_related and prefetch_related
+        posts = Post.objects.select_related('user').prefetch_related(
+            Prefetch(
+                'post_comment',
+                queryset=Comment.objects.select_related('user').only(
+                    'id', 'content', 'date_published', 'user__display_name', 'user__profile_user__id'
+                ),
+                to_attr='prefetched_comments'
+            ),
+        #     'user__profile_user'
+        # ).only(
+        #     'id', 'user__id', 'user__display_name', 'content', 'color_code', 'date_published'
+         )
 
-        for post in posts:
-            file_url = post.for_post.first().file_url if post.for_post.exists() else None
-            comments_data = [{
-                "id": comment.id,
-                "userid": comment.user.id,
-                "username": comment.user.display_name,
-                "content": comment.content,
-                "date_published": comment.date_published
-            } for comment in post.post_comment.all()]
-
-            posts_data.append({
+        # Use list comprehension for processing posts
+        posts_data = [
+            {
                 "id": post.id,
-                "userid": post.user.id,
+                #"userid": post.user.profile.id, #profile_user.first().id if post.user.profile_user.exists() else None,
                 "username": post.user.display_name,
                 "content": post.content,
                 "color_code": post.color_code,
-                "file_url": file_url,
+                "file_url": post.for_post.first().file_url if post.for_post.exists() else None,
                 "date_published": post.date_published,
-                "comments_data": comments_data,
+                "comments_data": [
+                    {
+                        "id": comment.id,
+                        #"userid": comment.comment_profile.id,#user.profile_user.first().id if comment.user.profile_user.exists() else None,
+                        "username": comment.user.display_name,
+                        "content": comment.content,
+                        "date_published": comment.date_published,
+                    }
+                    for comment in post.prefetched_comments
+                ],
                 "like_count": post.like_count(),
-            })
+            }
+            for post in posts
+        ]
 
         return Response(posts_data, status=status.HTTP_200_OK)
+
+
 
 class PostWithFileUploadViewSingleFile(APIView):
     permission_classes = [IsAuthenticated]

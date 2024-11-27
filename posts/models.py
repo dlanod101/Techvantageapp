@@ -1,10 +1,12 @@
 from django.db import models
 from users.models import CustomUser
+from profiles.models import UserProfile
 
 
 # Create your models here.
 class Post(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='post')
+    profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='profile')
     content = models.TextField()
     color_code = models.CharField(max_length=20, default="#33AFFF")
     date_published = models.DateTimeField(auto_now_add = True)
@@ -26,6 +28,7 @@ class Like(models.Model):
 
 class Comment(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="comment")
+    profile = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='comment_profile')
     content = models.CharField(max_length=255)
     date_published = models.DateTimeField(auto_now_add = True)
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="post_comment")

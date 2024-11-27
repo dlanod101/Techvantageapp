@@ -48,6 +48,7 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return self.about
+    
 
 
 class ProfilePicture(models.Model):
