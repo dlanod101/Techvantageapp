@@ -9,7 +9,8 @@ from .models import Post, UploadedFile, Comment, Like
 from .serializers import CommentSerializer, LikeSerializer
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
-from profiles.models import UserProfile
+from profiles.models import UserProfile, ProfilePicture
+from django.db.models import Prefetch
 
 class PostWithFileUploadView(APIView):
     permission_classes = [IsAuthenticated]
@@ -50,41 +51,67 @@ class PostWithFileUploadView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+
+
     def get(self, request):
-        posts = Post.objects.select_related('user').prefetch_related('post_comment', 'for_post').all()
-        
-        posts_data = []
+        # Optimize database queries
+        posts = Post.objects.select_related('user').prefetch_related(
+            Prefetch(
+                'post_comment',
+                queryset=Comment.objects.select_related('user').only(
+                    'id', 'content', 'date_published', 'user__display_name'
+                ),
+                to_attr='prefetched_comments'
+            ),
+            Prefetch(
+                'for_post',
+                queryset=UploadedFile.objects.only('file_url'),
+                to_attr='prefetched_files'
+            ),
+            Prefetch(
+                'user__profile_user',
+                queryset=UserProfile.objects.prefetch_related(
+                    Prefetch(
+                        'profile_pictures',
+                        queryset=ProfilePicture.objects.only('file_url'),
+                        to_attr='prefetched_profile_pictures'
+                    )
+                ).only('id'),
+                to_attr='prefetched_profile'
+            )
+        ).only(
+            'id', 'user__uid', 'user__display_name', 'content', 'color_code', 'date_published'
+        )
 
-        for post in posts:
-            pk = post.user.uid
-            profile =  UserProfile.objects.get(user=post.user)
-            profile_picture = profile.profile_pictures.first().file_url if profile.profile_pictures.exists() else None 
-
-            file_url = post.for_post.first().file_url if post.for_post.exists() else None
-
-            comments_data = [{
-                "id": comment.id,
-                "userid": profile.id,
-                "profile_picture": profile_picture,
-                "username": comment.user.display_name,
-                "content": comment.content,
-                "date_published": comment.date_published
-            } for comment in post.post_comment.all()]
-
-            posts_data.append({
+        # Build posts data using preloaded data
+        posts_data = [
+            {
                 "id": post.id,
-                "userid": profile.id,
-                "profile_picture": profile_picture,
+                "userid": (profile := post.user.prefetched_profile[0]).id if post.user.prefetched_profile else None,
+                "profile_picture": profile.prefetched_profile_pictures[0].file_url if profile and profile.prefetched_profile_pictures else None,
                 "username": post.user.display_name,
                 "content": post.content,
                 "color_code": post.color_code,
-                "file_url": file_url,
+                "file_url": post.prefetched_files[0].file_url if post.prefetched_files else None,
                 "date_published": post.date_published,
-                "comments_data": comments_data,
+                "comments_data": [
+                    {
+                        "id": comment.id,
+                        "userid": profile.id if profile else None,
+                        "profile_picture": profile.prefetched_profile_pictures[0].file_url if profile and profile.prefetched_profile_pictures else None,
+                        "username": comment.user.display_name,
+                        "content": comment.content,
+                        "date_published": comment.date_published,
+                    }
+                    for comment in post.prefetched_comments
+                ],
                 "like_count": post.like_count(),
-            })
+            }
+            for post in posts
+        ]
 
         return Response(posts_data, status=status.HTTP_200_OK)
+
 
 class PostWithFileUploadViewSingleFile(APIView):
     permission_classes = [IsAuthenticated]
