@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 from dotenv import load_dotenv
 import os 
+from decouple import config
 
 load_dotenv()
 
@@ -24,7 +25,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-psu#o!12eclllw!g2@h0%jh=6#y%u#hp!_he0re(-!7h^lhdwl'
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -111,11 +112,11 @@ WSGI_APPLICATION = 'auth.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',                # Replace with your Supabase DB name
-        'USER': 'postgres.yzxlzkmemzqaougdtmtm',                # Replace with your Supabase DB user
-        'PASSWORD': 'Techvantage-Social-App',        # Replace with your Supabase DB password
-        'HOST': 'aws-0-eu-west-2.pooler.supabase.com',        # Replace with your Supabase DB host
-        'PORT': '6543',                         # Default PostgreSQL port
+        'NAME': config('DATABASE_NAME'),
+        'USER': config('DATABASE_USER'),
+        'PASSWORD': config('DATABASE_PASSWORD'),
+        'HOST': config('DATABASE_HOST'),
+        'PORT': config('DATABASE_PORT'),                        # Default PostgreSQL port
     }
 }
 
