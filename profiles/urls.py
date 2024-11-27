@@ -19,8 +19,16 @@ urlpatterns = [
     # Education
     path('profile/educations/', views.EducationListCreateView.as_view(), name='education-list-create'),
 
+
+    path('profile/educations/<int:pk>/', views.EducationUpdateDelete.as_view(), name='education-update-delete'),
+
+
     # Location
     path('profile/locations/', views.LocationListCreateView.as_view(), name='location-list-create'),
+
+
+    path('profile/locations/<int:pk>/', views.LocationUpdateDelete.as_view(), name='education-update-delete'),
+
 
     # Profile Picture
     path('profile/profilepicture/', views.ProfilePictureUpdateView.as_view(), name='profile-picture-list-create'),
