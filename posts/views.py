@@ -9,6 +9,7 @@ from .models import Post, UploadedFile, Comment, Like
 from .serializers import CommentSerializer, LikeSerializer
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
+from profiles.models import UserProfile
 
 class PostWithFileUploadView(APIView):
     permission_classes = [IsAuthenticated]
@@ -51,13 +52,16 @@ class PostWithFileUploadView(APIView):
 
     def get(self, request):
         posts = Post.objects.select_related('user').prefetch_related('post_comment', 'for_post').all()
+        
         posts_data = []
 
         for post in posts:
+            pk = post.user.uid
+            profile =  UserProfile.objects.get(user=post.user)
             file_url = post.for_post.first().file_url if post.for_post.exists() else None
             comments_data = [{
                 "id": comment.id,
-                "userid": comment.user.id,
+                "userid": profile.id,
                 "username": comment.user.display_name,
                 "content": comment.content,
                 "date_published": comment.date_published
@@ -65,7 +69,7 @@ class PostWithFileUploadView(APIView):
 
             posts_data.append({
                 "id": post.id,
-                "userid": post.user.id,
+                "userid": profile.id,
                 "username": post.user.display_name,
                 "content": post.content,
                 "color_code": post.color_code,
