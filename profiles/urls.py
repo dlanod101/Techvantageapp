@@ -5,6 +5,8 @@ urlpatterns = [
     # UserProfile
     path('profile/', views.UserProfileDetailView.as_view(), name='user-profile-detail'),
 
+    path('profile/<int:pk>/', views.SpecificUserProfileDetailView.as_view(), name='specific-user-profile-detail'),
+
     # UserProfile
     path('profile_all/', views.ProfileFind.as_view(), name='user-profile-detail-all'),
 

@@ -4,6 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from utilities.firebase import upload_app_file  # Firebase upload helper function
 from .models import UserProfile, Experience, Education, Location, ProfilePicture, Friend, CoverPicture
 from rest_framework.views import APIView
+from django.core.exceptions import ObjectDoesNotExist
 from .serializers import (
     UserProfileSerializer,
     ExperienceSerializer,
@@ -160,6 +161,58 @@ class UserProfileDetailView(generics.RetrieveUpdateAPIView):
         response.data["message"] = "UserProfile updated successfully!"
         return response
 
+# UserProfile Views
+class SpecificUserProfileDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        try:
+            profile =  UserProfile.objects.get(id=pk)
+            profile_picture = profile.profile_pictures.first().file_url if profile.profile_pictures.exists() else None 
+            cover_picture = profile.cover_pictures.first().file_url if profile.cover_pictures.exists() else None 
+
+            experience_data = [{
+                'id': exp.id,
+                'position': exp.position,
+                'employment_type': exp.employment_type,
+                'company': exp.company,
+                'current_job': exp.current_job,
+                'start_date':exp.start_date,
+                'end_date':exp.end_date,
+                 } for exp in profile.experiences.all()
+            ]
+
+            education_data = [{
+                'id': edu.id,
+                'school': edu.school,
+                'start_date': edu.start_date,
+                'end_date': edu.end_date,
+            } for edu in profile.educations.all()]
+
+            location_data = [{
+                'id':loc.id,
+                'country': loc.country,
+                'city': loc.city,
+            } for loc in profile.locations.all()]
+
+            response_data = {
+                "id": profile.id,
+                "user": profile.user.display_name,
+                "user_id": profile.user.uid,
+                "profile_picture": profile_picture,
+                "cover_picture": cover_picture,
+                "about": profile.about,
+                'skills': profile.skills,
+                'interest': profile.interest,
+                'current_position': profile.current_position,
+                'experience': experience_data,
+                'education': education_data,
+                'location': location_data,
+                }
+            return Response({"message": "Profile retrieved successfully.", "profile": response_data}, status=status.HTTP_200_OK)
+
+        except ObjectDoesNotExist:
+            return Response({"error": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)
     
 from rest_framework.views import APIView
 from rest_framework.response import Response
