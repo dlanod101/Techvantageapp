@@ -341,6 +341,7 @@ class ProfileFind(APIView):
                 ],
                 "about": profile.about,
                 "is_friend": self.is_friend(user, profile.user),
+                "is_friend_request_sent": self.is_friend_request_sent(user, profile.user)
                 # Add other fields as needed
             }
             for profile in profiles
@@ -353,6 +354,13 @@ class ProfileFind(APIView):
         return Friend.objects.filter(
             (Q(user=current_user) & Q(friend=other_user)) |
             (Q(user=other_user) & Q(friend=current_user))
+        ).exists()
+    
+    def is_friend_request_sent(self, current_user, other_user):
+        """Check if two users are friends."""
+        return FriendRequest.objects.filter(
+            (Q(sender=current_user) & Q(receiver=other_user)) |
+            (Q(sender=other_user) & Q(receiver=current_user))
         ).exists()
 
 
