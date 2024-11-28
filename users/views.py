@@ -11,6 +11,9 @@ from django.http import JsonResponse
 from rest_framework.decorators import api_view
 import requests
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+from firebase_admin import auth
+import json
 
 class RegisterAPIView(CreateAPIView):
     """
@@ -101,27 +104,22 @@ class LogoutAPIView(CreateAPIView):
 
         return Response({"message": "Logout successful"}, status=status.HTTP_200_OK)
 
-# from rest_framework.views import APIView
-# from rest_framework.response import Response
-# from rest_framework import status
- # Your Firebase upload function
+# views.py
 
-# class FileUploadView(APIView):
-#     """
-#     API View for handling file uploads.
-#     """
+@csrf_exempt
+def generate_password_reset_link(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        email = data.get("email")
+        if not email:
+            return JsonResponse({"error": "Email is required"}, status=400)
+        
+        try:
+            link = auth.generate_password_reset_link(email)
+            return JsonResponse({"message": f" {link} Click this link to reset password"}, status=200)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
 
-#     def post(self, request):
-#         file = request.FILES.get('file')  # Make sure this matches the key in Postman
-#         if not file:
-#             return Response({"error": "No file provided."}, status=status.HTTP_400_BAD_REQUEST)
-
-#         # Call your Firebase upload function
-#         try:
-#             file_url = upload_file_to_firebase(file)  # Implement this function to upload to Firebase
-#             return Response({"file_url": file_url}, status=status.HTTP_201_CREATED)
-#         except Exception as e:
-#             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 def refresh_id_token(request):

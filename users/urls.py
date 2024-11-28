@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import RegisterAPIView, LoginAPIView, LogoutAPIView, FileUploadView, RetrieveFileView, refresh_id_token
+from .views import RegisterAPIView, LoginAPIView, LogoutAPIView, FileUploadView, RetrieveFileView, refresh_id_token, generate_password_reset_link
 
 from django.urls import re_path
 from rest_framework import permissions
@@ -27,6 +27,7 @@ urlpatterns = [
     path('upload/', FileUploadView.as_view(), name='file-upload'),
     path('retrieve/<int:file_id>', RetrieveFileView.as_view(), name='file-retrieve'),
     path('refresh_id_token/', refresh_id_token, name='refresh_id_token'),
+    path('send_password_reset_email/', generate_password_reset_link, name='send_password_reset_email'),
 
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

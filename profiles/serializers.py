@@ -84,6 +84,7 @@ class FriendRequestSerializer(serializers.ModelSerializer):
             return profile_picture.file_url if profile_picture else None
         return None
     
+    
     def get_receiver(self, obj):
         return obj.receiver.display_name
 
