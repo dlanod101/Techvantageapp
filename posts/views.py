@@ -210,9 +210,12 @@ class SharePostView(APIView):
 class UserPostView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
+    
+    def get(self, request, user_id):
+        
+        profile = UserProfile.objects.get(id=user_id)
         # Optimize database queries
-        posts = Post.objects.filter(user=request.user).prefetch_related(
+        posts = Post.objects.filter(user=profile.user).prefetch_related(
             Prefetch(
                 'post_comment',
                 queryset=Comment.objects.select_related('user').only(

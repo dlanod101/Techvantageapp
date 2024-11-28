@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import UserProfile, Experience, Education, Location, ProfilePicture, Friend, CoverPicture, FriendRequest, Friend
+from django.db.models import Q
 
 class ExperienceSerializer(serializers.ModelSerializer):
     class Meta:
@@ -42,12 +43,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
     locations = LocationSerializer(many=True, read_only=True)
     profile_pictures = ProfilePictureSerializer(many=True, read_only=True)
     cover_pictures = CoverPictureSerializer(many=True, read_only=True)
-    #is_friend = serializers.SerializerMethodField()
+    is_friend = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
         fields = [
-            'id', 'user', 'about', 'skills', 'interest', 'date_published',
+            'id', 'user', 'about', 'skills', 'interest', 'date_published', 'is_friend',
             'experiences', 'educations', 'locations', 'profile_pictures','cover_pictures'
         ]
         read_only_fields = ['user', 'date_published']
@@ -57,6 +58,16 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "id": obj.user.uid,  # Return the username, or you can return email, etc.
             "display_name": obj.user.display_name
         }
+    def get_is_friend(self, obj):
+        # Get the logged-in user from the context
+        current_user = self.context.get('request').user
+
+        # Check if a friendship exists
+        is_friend = Friend.objects.filter(
+            (Q(user=current_user) & Q(friend=obj.user)) | (Q(user=obj.user) & Q(friend=current_user))
+        ).exists()
+        
+        return is_friend
 
 # Serializer for FriendRequest
 class FriendRequestSerializer(serializers.ModelSerializer):

@@ -24,7 +24,7 @@ from users.models import CustomUser
 from .models import UserProfile
 import string
 import random
-
+from django.db.models import Q
 
 @receiver(post_save, sender=CustomUser)
 def create_user_profile(sender, instance, created, **kwargs):
@@ -340,12 +340,20 @@ class ProfileFind(APIView):
                     {"file_url": pic.file_url} for pic in profile.prefetched_pictures
                 ],
                 "about": profile.about,
+                "about": profile.is_friend(user, profile.user),
                 # Add other fields as needed
             }
             for profile in profiles
         ]
 
         return Response(profiles_data, status=status.HTTP_200_OK)
+
+    def is_friend(self, current_user, other_user):
+        """Check if two users are friends."""
+        return Friend.objects.filter(
+            (Q(user=current_user) & Q(friend=other_user)) |
+            (Q(user=other_user) & Q(friend=current_user))
+        ).exists()
 
 
 
