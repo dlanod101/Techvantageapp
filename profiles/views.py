@@ -340,7 +340,7 @@ class ProfileFind(APIView):
                     {"file_url": pic.file_url} for pic in profile.prefetched_pictures
                 ],
                 "about": profile.about,
-                "about": profile.is_friend(user, profile.user),
+                "is_friend": self.is_friend(user, profile.user),
                 # Add other fields as needed
             }
             for profile in profiles
