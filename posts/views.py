@@ -206,3 +206,65 @@ class SharePostView(APIView):
             "post_id": post.id,
             "user": request.user.display_name,
         }, status=status.HTTP_200_OK)
+
+class UserPostView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Optimize database queries
+        posts = Post.objects.filter(user=request.user).prefetch_related(
+            Prefetch(
+                'post_comment',
+                queryset=Comment.objects.select_related('user').only(
+                    'id', 'content', 'date_published', 'user__display_name'
+                ),
+                to_attr='prefetched_comments'
+            ),
+            Prefetch(
+                'for_post',
+                queryset=UploadedFile.objects.only('file_url'),
+                to_attr='prefetched_files'
+            ),
+            Prefetch(
+                'user__profile_user',
+                queryset=UserProfile.objects.prefetch_related(
+                    Prefetch(
+                        'profile_pictures',
+                        queryset=ProfilePicture.objects.only('file_url'),
+                        to_attr='prefetched_profile_pictures'
+                    )
+                ).only('id'),
+                to_attr='prefetched_profile'
+            )
+        ).only(
+            'id', 'user__uid', 'user__display_name', 'content', 'color_code', 'date_published'
+        )
+
+        # Build posts data using preloaded data
+        posts_data = [
+            {
+                "id": post.id,
+                "userid": (profile := post.user.prefetched_profile[0]).id if post.user.prefetched_profile else None,
+                "profile_picture": profile.prefetched_profile_pictures[0].file_url if profile and profile.prefetched_profile_pictures else None,
+                "username": post.user.display_name,
+                "content": post.content,
+                "color_code": post.color_code,
+                "file_url": post.prefetched_files[0].file_url if post.prefetched_files else None,
+                "date_published": post.date_published,
+                "comments_data": [
+                    {
+                        "id": comment.id,
+                        "userid": profile.id if profile else None,
+                        "profile_picture": profile.prefetched_profile_pictures[0].file_url if profile and profile.prefetched_profile_pictures else None,
+                        "username": comment.user.display_name,
+                        "content": comment.content,
+                        "date_published": comment.date_published,
+                    }
+                    for comment in post.prefetched_comments
+                ],
+                "like_count": post.like_count(),
+            }
+            for post in posts
+        ]
+
+        return Response(posts_data, status=status.HTTP_200_OK)

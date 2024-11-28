@@ -42,6 +42,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     locations = LocationSerializer(many=True, read_only=True)
     profile_pictures = ProfilePictureSerializer(many=True, read_only=True)
     cover_pictures = CoverPictureSerializer(many=True, read_only=True)
+    #is_friend = serializers.SerializerMethodField()
 
     class Meta:
         model = UserProfile
