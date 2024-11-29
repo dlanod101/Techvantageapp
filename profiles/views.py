@@ -266,6 +266,7 @@ class SpecificUserProfileDetailView(APIView):
 
     def get(self, request, pk):
         try:
+            user = request.user
             profile =  UserProfile.objects.get(id=pk)
             profile_picture = profile.profile_pictures.first().file_url if profile.profile_pictures.exists() else None 
             cover_picture = profile.cover_pictures.first().file_url if profile.cover_pictures.exists() else None 
@@ -307,11 +308,26 @@ class SpecificUserProfileDetailView(APIView):
                 'experience': experience_data,
                 'education': education_data,
                 'location': location_data,
+                "is_friend": self.is_friend(user, profile.user),
+                "is_friend_request_sent": self.is_friend_request_sent(user, profile.user)
                 }
             return Response({"message": "Profile retrieved successfully.", "profile": response_data}, status=status.HTTP_200_OK)
 
         except ObjectDoesNotExist:
             return Response({"error": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)
+    def is_friend(self, current_user, other_user):
+        """Check if two users are friends."""
+        return Friend.objects.filter(
+            (Q(user=current_user) & Q(friend=other_user)) |
+            (Q(user=other_user) & Q(friend=current_user))
+        ).exists()
+    
+    def is_friend_request_sent(self, current_user, other_user):
+        """Check if two users are friends."""
+        return FriendRequest.objects.filter(
+            (Q(sender=current_user) & Q(receiver=other_user)) |
+            (Q(sender=other_user) & Q(receiver=current_user))
+        ).exists()
     
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -340,30 +356,12 @@ class ProfileFind(APIView):
                     {"file_url": pic.file_url} for pic in profile.prefetched_pictures
                 ],
                 "about": profile.about,
-                "is_friend": self.is_friend(user, profile.user),
-                "is_friend_request_sent": self.is_friend_request_sent(user, profile.user)
                 # Add other fields as needed
             }
             for profile in profiles
         ]
 
         return Response(profiles_data, status=status.HTTP_200_OK)
-
-    def is_friend(self, current_user, other_user):
-        """Check if two users are friends."""
-        return Friend.objects.filter(
-            (Q(user=current_user) & Q(friend=other_user)) |
-            (Q(user=other_user) & Q(friend=current_user))
-        ).exists()
-    
-    def is_friend_request_sent(self, current_user, other_user):
-        """Check if two users are friends."""
-        return FriendRequest.objects.filter(
-            (Q(sender=current_user) & Q(receiver=other_user)) |
-            (Q(sender=other_user) & Q(receiver=current_user))
-        ).exists()
-
-
 
     
 from django.shortcuts import get_object_or_404
