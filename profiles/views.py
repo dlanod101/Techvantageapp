@@ -4,7 +4,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from utilities.firebase import upload_app_file  # Firebase upload helper function
-from .models import UserProfile, Experience, Education, Location, ProfilePicture, Friend, CoverPicture
+from .models import UserProfile, Experience, Education, Location, ProfilePicture, Friend, CoverPicture, Job
 from rest_framework.views import APIView
 from django.core.exceptions import ObjectDoesNotExist
 from .serializers import (
@@ -15,7 +15,7 @@ from .serializers import (
     ProfilePictureSerializer,
     FriendSerializer,
     CoverPictureSerializer,
-    #ApiResponseSerializer
+    UserJobSerializer,
 )
 
 from django.db.models.signals import post_save
@@ -49,6 +49,12 @@ def create_user_profile(sender, instance, created, **kwargs):
             profile=user_profile,
             file_name="default-profile-picture.png",
             file_url=default_file_url
+        )
+        # Create a ProfilePicture instance with the default URL
+        Job.objects.create(
+            user_profile=user_profile,
+            job_type="None",
+            availability='None'
         )
 
 
@@ -184,7 +190,41 @@ class LocationUpdateDelete(generics.RetrieveUpdateDestroyAPIView):
         return Response({
             "message": "Location deleted successfully."
         }, status=status.HTTP_204_NO_CONTENT)
+    
+class JobListCreateView(generics.ListCreateAPIView):
+    serializer_class = UserJobSerializer
+    permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        return Job.objects.filter(user_profile__user=self.request.user)
+
+    def perform_create(self, serializer):
+        user_profile = UserProfile.objects.get(user=self.request.user)
+        serializer.save(user_profile=user_profile)
+
+class JobView(generics.RetrieveUpdateAPIView):
+    serializer_class = UserJobSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = 'pk' 
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response({
+            "message": "Location retrieved successfully.",
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response({
+            "message": "Location updated successfully.",
+            "data": serializer.data
+        }, status=status.HTTP_200_OK)
 
 
 # ProfilePicture Views
@@ -295,6 +335,12 @@ class SpecificUserProfileDetailView(APIView):
                 'city': loc.city,
             } for loc in profile.locations.all()]
 
+            job_data = [{
+                'id':job.id,
+                'job_type': job.job_type,
+                'availability': job.availability,
+            } for job in profile.jobs.all()]
+
             response_data = {
                 "id": profile.id,
                 "user": profile.user.display_name,
@@ -308,6 +354,7 @@ class SpecificUserProfileDetailView(APIView):
                 'experience': experience_data,
                 'education': education_data,
                 'location': location_data,
+                'job': job_data,
                 "is_friend": self.is_friend(user, profile.user),
                 "is_friend_request_sent": self.is_friend_request_sent(user, profile.user)
                 }

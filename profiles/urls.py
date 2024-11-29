@@ -27,7 +27,12 @@ urlpatterns = [
     path('profile/locations/', views.LocationListCreateView.as_view(), name='location-list-create'),
 
 
-    path('profile/locations/<int:pk>/', views.LocationUpdateDelete.as_view(), name='education-update-delete'),
+    path('profile/locations/<int:pk>/', views.LocationUpdateDelete.as_view(), name='location-update-delete'),
+
+
+    path('profile/jobs/', views.JobListCreateView.as_view(), name='job-create'),
+
+    path('profile/jobs/<int:pk>/', views.JobView.as_view(), name='job-update-'),
 
 
     # Profile Picture

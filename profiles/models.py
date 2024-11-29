@@ -36,6 +36,13 @@ class Location(models.Model):
     def __str__(self):
         return f"{self.city}, {self.country}"
 
+class Job(models.Model):
+    user_profile = models.ForeignKey('UserProfile', on_delete=models.CASCADE, related_name='jobs')
+    job_type = models.CharField(default='Full-Time Job', max_length=50)
+    availability = models.CharField(default='Available Now', max_length=50)
+
+    def __str__(self):
+        return self.job_type
 
 class UserProfile(models.Model):
     """UserProfile Model"""

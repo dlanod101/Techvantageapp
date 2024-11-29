@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import UserProfile, Experience, Education, Location, ProfilePicture, Friend, CoverPicture, FriendRequest, Friend
+from .models import UserProfile, Experience, Education, Location, Job, ProfilePicture, Friend, CoverPicture, FriendRequest, Friend
 from django.db.models import Q
 
 class ExperienceSerializer(serializers.ModelSerializer):
@@ -22,6 +22,11 @@ class LocationSerializer(serializers.ModelSerializer):
         fields = ['id', 'user_profile', 'country', 'city']
         read_only_fields = ['user_profile']
 
+class UserJobSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Job
+        fields = ['id', 'user_profile', 'job_type', 'availability']
+        read_only_fields = ['user_profile']
 
 class ProfilePictureSerializer(serializers.ModelSerializer):
     class Meta:
@@ -41,6 +46,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     experiences = ExperienceSerializer(many=True, read_only=True)  # Nested serializer
     educations = EducationSerializer(many=True, read_only=True)
     locations = LocationSerializer(many=True, read_only=True)
+    jobs = UserJobSerializer(many=True, read_only=True)
     profile_pictures = ProfilePictureSerializer(many=True, read_only=True)
     cover_pictures = CoverPictureSerializer(many=True, read_only=True)
     is_friend = serializers.SerializerMethodField()
@@ -49,7 +55,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = [
             'id', 'user', 'about', 'skills', 'interest', 'date_published', 'is_friend',
-            'experiences', 'educations', 'locations', 'profile_pictures','cover_pictures'
+            'experiences', 'educations', 'locations', 'jobs', 'profile_pictures','cover_pictures'
         ]
         read_only_fields = ['user', 'date_published']
 
