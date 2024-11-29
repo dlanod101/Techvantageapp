@@ -190,17 +190,6 @@ class LocationUpdateDelete(generics.RetrieveUpdateDestroyAPIView):
         return Response({
             "message": "Location deleted successfully."
         }, status=status.HTTP_204_NO_CONTENT)
-    
-class JobListCreateView(generics.ListCreateAPIView):
-    serializer_class = UserJobSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return Job.objects.filter(user_profile__user=self.request.user)
-
-    def perform_create(self, serializer):
-        user_profile = UserProfile.objects.get(user=self.request.user)
-        serializer.save(user_profile=user_profile)
 
 class JobView(generics.RetrieveUpdateAPIView):
     serializer_class = UserJobSerializer
