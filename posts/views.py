@@ -121,6 +121,7 @@ class PostWithFileUploadViewSingleFile(APIView):
         try:
             # Retrieve the post or raise an exception if not found
             post = Post.objects.get(id=post_id)
+            profile_picture = ProfilePicture.objects.get(user=post.user)
 
             # Fetch related data if available
             file_url = post.for_post.first().file_url if post.for_post.exists() else None  # Assuming for_post is the related name for UploadedFile
@@ -129,11 +130,13 @@ class PostWithFileUploadViewSingleFile(APIView):
                 "username": comment.user.display_name,  # Assuming comment has a user field with display_name
                 "content": comment.content,
                 "date_published": comment.date_published # Convert to ISO format
+                
             } for comment in post.post_comment.all()]  # Assuming post_comment is the related name for Comment
 
             response_data = {
                 "id": post.id,
                 "username": post.user.display_name,  # Assuming post has a user field with display_name
+                "profile_picture": profile_picture.file_url,
                 "content": post.content,
                 "color_code": post.color_code,
                 "file_url": file_url,
