@@ -132,7 +132,7 @@ class PostWithFileUploadViewSingleFile(APIView):
             for comment in post.post_comment.all():
                 comment_profile_picture = ProfilePicture.objects.get(user=comment.user)
                 comment_profile = UserProfile.objects.get(user=post.user)
-                comments_data.append = ({
+                comments_data.append({
                     "id": comment.id,
                     "profile_id": comment_profile.id,
                     "username": comment.user.display_name,  # Assuming comment has a user field with display_name
