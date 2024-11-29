@@ -192,6 +192,7 @@ class LocationUpdateDelete(generics.RetrieveUpdateDestroyAPIView):
         }, status=status.HTTP_204_NO_CONTENT)
 
 class JobView(generics.RetrieveUpdateAPIView):
+    queryset = Job.objects.all()
     serializer_class = UserJobSerializer
     permission_classes = [IsAuthenticated]
     lookup_field = 'pk' 
