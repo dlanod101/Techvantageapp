@@ -128,17 +128,18 @@ class PostWithFileUploadViewSingleFile(APIView):
 
             # Fetch related data if available
             file_url = post.for_post.first().file_url if post.for_post.exists() else None  # Assuming for_post is the related name for UploadedFile
+            comments_data = []
             for comment in post.post_comment.all():
                 comment_profile_picture = ProfilePicture.objects.get(user=comment.user)
                 comment_profile = UserProfile.objects.get(user=post.user)
-                comments_data = [{
+                comments_data.append = ({
                     "id": comment.id,
                     "profile_id": comment_profile.id,
                     "username": comment.user.display_name,  # Assuming comment has a user field with display_name
                     "profile_picture": comment_profile_picture.file_url,
                     "content": comment.content,
                     "date_published": comment.date_published # Convert to ISO format
-                } ]  # Assuming post_comment is the related name for Comment
+                })  # Assuming post_comment is the related name for Comment
 
             response_data = {
                 "id": post.id,
