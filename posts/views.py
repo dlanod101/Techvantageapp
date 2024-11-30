@@ -94,17 +94,6 @@ class PostWithFileUploadView(APIView):
                 "color_code": post.color_code,
                 "file_url": post.prefetched_files[0].file_url if post.prefetched_files else None,
                 "date_published": post.date_published,
-                "comments_data": [
-                    {
-                        "id": comment.id,
-                        "userid": profile.id if profile else None,
-                        "profile_picture": profile.prefetched_profile_pictures[0].file_url if profile and profile.prefetched_profile_pictures else None,
-                        "username": comment.user.display_name,
-                        "content": comment.content,
-                        "date_published": comment.date_published,
-                    }
-                    for comment in post.prefetched_comments
-                ],
                 "like_count": post.like_count(),
             }
             for post in posts
