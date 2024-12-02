@@ -59,7 +59,7 @@ class PostWithFileUploadView(APIView):
             Prefetch(
                 'post_comment',
                 queryset=Comment.objects.select_related('user').only(
-                    'id', 'content', 'date_published', 'user__display_name'
+                    'id', 'user__display_name'
                 ),
                 to_attr='prefetched_comments'
             ),
