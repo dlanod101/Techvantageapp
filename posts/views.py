@@ -94,6 +94,13 @@ class PostWithFileUploadView(APIView):
                 "color_code": post.color_code,
                 "file_url": post.prefetched_files[0].file_url if post.prefetched_files else None,
                 "date_published": post.date_published,
+                "comments_data": [
+                    {
+                        "id": comment.id,
+                        
+                    }
+                    for comment in post.prefetched_comments
+                    ],
                 "like_count": post.like_count(),
             }
             for post in posts
