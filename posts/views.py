@@ -55,7 +55,9 @@ class PostWithFileUploadView(APIView):
 
     def get(self, request):
         # Optimize database queries
-        posts = Post.objects.select_related('user').prefetch_related(
+        current_user = request.user
+        friend_ids = Friend.objects.filter(user=current_user).values_list('friend_id', flat=True)
+        posts = Post.objects.filter(Q(user=current_user) | Q(user__id__in=friend_ids)).select_related('user').prefetch_related(
             Prefetch(
                 'post_comment',
                 queryset=Comment.objects.select_related('user').only(
