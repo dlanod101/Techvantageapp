@@ -10,7 +10,7 @@ from .serializers import CommentSerializer, LikeSerializer
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
 from profiles.models import UserProfile, ProfilePicture
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 
 class PostWithFileUploadView(APIView):
     permission_classes = [IsAuthenticated]
