@@ -14,6 +14,10 @@ from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from firebase_admin import auth
 import json
+from django.core.mail import send_mail
+
+
+
 
 class RegisterAPIView(CreateAPIView):
     """
@@ -109,16 +113,33 @@ class LogoutAPIView(CreateAPIView):
 @csrf_exempt
 def generate_password_reset_link(request):
     if request.method == "POST":
-        data = json.loads(request.body)
-        email = data.get("email")
-        if not email:
-            return JsonResponse({"error": "Email is required"}, status=400)
-        
         try:
+            # Parse the request body
+            data = json.loads(request.body)
+            email = data.get("email")
+
+            if not email:
+                return JsonResponse({"error": "Email is required"}, status=400)
+
+            # Generate the reset link using Firebase
             link = auth.generate_password_reset_link(email)
-            return JsonResponse({"message": f" {link} Click this link to reset password"}, status=200)
+
+            # Send email using Django's send_mail
+            subject = "Password Reset Request"
+            message = f"Click this link to reset your password: {link}"
+            from_email = settings.DEFAULT_FROM_EMAIL
+            recipient_list = [email]
+
+            send_mail(subject, message, from_email, recipient_list)
+
+            return JsonResponse({"message": "Password reset link sent successfully."}, status=200)
+
+        except ValueError:
+            return JsonResponse({"error": "Invalid email address."}, status=400)
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
+            return JsonResponse({"error": str(e)}, status=500)
+    else:
+        return JsonResponse({"error": "Method not allowed"}, status=405)
 
 
 @api_view(['POST'])
