@@ -14,6 +14,9 @@ from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from firebase_admin import auth
 import json
+import smtplib
+
+load_dotenv()
 
 class RegisterAPIView(CreateAPIView):
     """
@@ -116,6 +119,18 @@ def generate_password_reset_link(request):
         
         try:
             link = auth.generate_password_reset_link(email)
+            
+            s = smtplib.SMTP('smtp.gmail.com', 587)
+
+            s.starttls()
+
+            s.login(os.getenv('EMAIL_ID'), os.getenv('EMAIL_PASSWORD'))
+
+            message = f"Click this link to reset password {link} "
+
+            s.sendmail(os.getenv('EMAIL_ID'), email, message)
+
+            s.quit()
             return JsonResponse({"message": f" {link} Click this link to reset password"}, status=200)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)

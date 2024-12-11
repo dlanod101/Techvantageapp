@@ -10,3 +10,4 @@ django-filter
 django-cors-headers
 python-dotenv
 python-decouple
+smtplib
