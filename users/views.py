@@ -125,8 +125,8 @@ def generate_password_reset_link(request):
             link = auth.generate_password_reset_link(email)
 
             # Send email using Django's send_mail
-            subject = "Password Reset Request"
-            message = f"Click this link to reset your password: {link}"
+            subject = "Techvantage Password Reset"
+            message = f"To reset your password, click on this link: {link}"
             from_email = settings.DEFAULT_FROM_EMAIL
             recipient_list = [email]
 
